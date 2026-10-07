@@ -37,7 +37,6 @@ public sealed interface LayoutDirective {
         SNIPPETS(KeyboardState.Mode.SNIPPETS),
         NUMPAD(KeyboardState.Mode.NUMPAD),
         DPAD(KeyboardState.Mode.DPAD),
-        SNIPPETS(KeyboardState.Mode.SNIPPETS),
     ;
         private final KeyboardState.Mode mMode;
 

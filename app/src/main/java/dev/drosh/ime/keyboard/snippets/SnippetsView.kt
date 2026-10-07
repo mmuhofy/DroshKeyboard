@@ -10,9 +10,10 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import dev.drosh.ime.latin.R
+import dev.drosh.ime.state.DroshStateClient
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import dev.drosh.ime.R
 import dev.drosh.ime.keyboard.KeyboardActionListener
 import dev.drosh.ime.keyboard.internal.keyboard_parser.floris.KeyCode
 import dev.drosh.ime.latin.common.Constants
