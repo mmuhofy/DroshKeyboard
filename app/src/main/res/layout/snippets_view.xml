@@ -33,7 +33,7 @@
             android:id="@+id/snippets_add"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/snippet_add_title"
             android:src="@drawable/ic_plus" />
 
@@ -41,7 +41,7 @@
             android:id="@+id/snippets_close"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/snippet_close"
             android:src="@drawable/ic_close" />
     </LinearLayout>

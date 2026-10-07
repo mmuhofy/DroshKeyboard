@@ -36,7 +36,6 @@ class KeyboardState(private val switchActions: SwitchActions) {
         fun setEmojiKeyboard()
         fun setClipboardKeyboard()
         fun setSnippetsKeyboard()
-        fun setSnippetsKeyboard()
         fun setNumpadKeyboard()
         fun setDpadKeyboard()
         fun setSymbolsKeyboard()
@@ -172,7 +171,6 @@ class KeyboardState(private val switchActions: SwitchActions) {
             Utility.SYMBOLS_SHIFTED -> switchActions.setSymbolsShiftedKeyboard()
             Utility.EMOJI -> switchActions.setEmojiKeyboard()
             Utility.CLIPBOARD -> switchActions.setClipboardKeyboard()
-            Utility.SNIPPETS -> switchActions.setSnippetsKeyboard()
             Utility.SNIPPETS -> switchActions.setSnippetsKeyboard()
             Utility.NUMPAD -> switchActions.setNumpadKeyboard()
             Utility.DPAD -> switchActions.setDpadKeyboard()
@@ -479,7 +477,6 @@ class KeyboardState(private val switchActions: SwitchActions) {
                 toggleLayout(Utility.CLIPBOARD, autoCapsFlags, recapitalizeMode)
             }
             KeyCode.SNIPPETS -> toggleLayout(Utility.SNIPPETS, autoCapsFlags, recapitalizeMode)
-            KeyCode.SNIPPETS -> toggleLayout(Utility.SNIPPETS, autoCapsFlags, recapitalizeMode)
             KeyCode.NUMPAD -> toggleLayout(Utility.NUMPAD, autoCapsFlags, recapitalizeMode)
             KeyCode.DPAD -> toggleLayout(Utility.DPAD, autoCapsFlags, recapitalizeMode)
             KeyCode.SYMBOL -> toggleLayout(Utility.SYMBOLS, autoCapsFlags, recapitalizeMode)
@@ -512,7 +509,6 @@ class KeyboardState(private val switchActions: SwitchActions) {
         SNIPPETS,
         NUMPAD,
         DPAD,
-        SNIPPETS,
     ;
         fun directive(shiftMode: ShiftMode, autoCapsFlags: Int, recapitalizeMode: RecapitalizeMode?): LayoutDirective {
             return when (this) {
@@ -524,7 +520,6 @@ class KeyboardState(private val switchActions: SwitchActions) {
                 SNIPPETS -> Utility.SNIPPETS
                 NUMPAD -> Utility.NUMPAD
                 DPAD -> Utility.DPAD
-                SNIPPETS -> Utility.SNIPPETS
             }
         }
     }
