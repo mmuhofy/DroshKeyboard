@@ -6,9 +6,9 @@
 
 package com.android.inputmethod.latin;
 
-import helium314.keyboard.latin.common.NativeSuggestOptions;
-import helium314.keyboard.latin.define.DecoderSpecificConstants;
-import helium314.keyboard.latin.utils.JniUtils;
+import dev.drosh.ime.latin.common.NativeSuggestOptions;
+import dev.drosh.ime.latin.define.DecoderSpecificConstants;
+import dev.drosh.ime.latin.utils.JniUtils;
 
 import java.util.Locale;
 

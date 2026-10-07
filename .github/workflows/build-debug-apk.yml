@@ -1,6 +1,10 @@
 name: Build debug APK
 
 on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -28,8 +32,19 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: HeliBoard-debug
+          name: DroshKeyboard-debug
           path: app/build/outputs/apk/debug/*-debug*.apk
+
+      - name: Verify shared signing identity
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*-debug*.apk | head -1)
+          ACTUAL=$(keytool -printcert -jarfile "$APK" | grep -i sha256 | awk '{print $2}')
+          EXPECTED="D0:2D:64:02:1C:02:93:95:72:25:89:F8:F0:8B:F4:26:BE:6C:99:7F:01:95:AC:69:90:D7:A9:B2:9A:73:12:58"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "SIGNING MISMATCH: got $ACTUAL, want $EXPECTED"
+            exit 1
+          fi
+          echo "signature OK: $ACTUAL"
 
       - name: Archive reports for failed job
         uses: actions/upload-artifact@v4

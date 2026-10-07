@@ -1,4 +1,5 @@
 import com.android.build.api.variant.ApplicationVariant
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -6,12 +7,22 @@ plugins {
     kotlin("plugin.compose") version "2.4.0"
 }
 
+// Shared signing identity with the Drosh app. The debug keystore is checked
+// into git so CI-built and locally-built APKs share one certificate and can
+// install over each other; see keystore.properties.
+val keystoreProperties = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) {
+        f.inputStream().use { load(it) }
+    }
+}
+
 android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "helium314.keyboard"
-        minSdk = 21
+        applicationId = "dev.drosh.ime"
+        minSdk = 31
         targetSdk = 37
         versionCode = 4200
         versionName = "4.2-beta1"
@@ -20,6 +31,19 @@ android {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
         }
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+    }
+
+    signingConfigs {
+        if (keystoreProperties.isNotEmpty()) {
+            create("debug-keystore") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                enableV1Signing = true
+                enableV2Signing = true
+            }
+        }
     }
 
     buildTypes {
@@ -38,6 +62,9 @@ android {
         debug {
             // "normal" debug has minify for smaller APK to fit the GitHub 25 MB limit when zipped
             // and for better performance in case users want to install a debug APK
+            if (keystoreProperties.isNotEmpty()) {
+                signingConfig = signingConfigs.getByName("debug-keystore")
+            }
             isMinifyEnabled = true
             isJniDebuggable = false
             applicationIdSuffix = ".debug"
@@ -109,7 +136,7 @@ android {
         includeInBundle = false
     }
 
-    namespace = "helium314.keyboard.latin"
+    namespace = "dev.drosh.ime.latin"
     lint {
         abortOnError = true
     }
