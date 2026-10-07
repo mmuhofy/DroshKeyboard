@@ -573,8 +573,20 @@ public final class KeyboardSwitcher {
         mCurrentInputView = (InputView)LayoutInflater.from(mThemeContext).inflate(R.layout.input_view, null);
         mMainKeyboardFrame = mCurrentInputView.findViewById(R.id.main_keyboard_frame);
         mEmojiPalettesView = mCurrentInputView.findViewById(R.id.emoji_palettes_view);
-        mClipboardHistoryView = mCurrentInputView.findViewById(R.id.clipboard_history_view);
-        mFakeToastView = mCurrentInputView.findViewById(R.id.fakeToast);
+                mClipboardHistoryView = mCurrentInputView.findViewById(R.id.clipboard_history_view);
+                mSnippetsView = mCurrentInputView.findViewById(R.id.snippets_view);
+                if (mSnippetsView == null) {
+                    mSnippetsView = new dev.drosh.ime.keyboard.snippets.SnippetsView(context, null, 0) {
+                        @Override
+                        protected void onDetachedFromWindow() {
+                            stopSnippets();
+                            super.onDetachedFromWindow();
+                        }
+                    };
+                    // The snippet panel was not inflated from XML but added programmatically
+                    // to avoid missing the snippet tab action when the custom view is enabled.
+                }
+                mFakeToastView = mCurrentInputView.findViewById(R.id.fakeToast);
 
         mKeyboardViewWrapper = mCurrentInputView.findViewById(R.id.keyboard_view_wrapper);
         mKeyboardViewWrapper.setKeyboardActionListener(mLatinIME.mKeyboardActionListener);
@@ -585,7 +597,9 @@ public final class KeyboardSwitcher {
         mEmojiPalettesView.setKeyboardActionListener(mLatinIME.mKeyboardActionListener);
         mClipboardHistoryView.setHardwareAcceleratedDrawingEnabled(isHardwareAcceleratedDrawingEnabled);
         mClipboardHistoryView.setKeyboardActionListener(mLatinIME.mKeyboardActionListener);
-        mSnippetsView.setKeyboardActionListener(mLatinIME.mKeyboardActionListener);
+        if (mSnippetsView != null) {
+            mSnippetsView.setKeyboardActionListener(mLatinIME.mKeyboardActionListener);
+        }
         mEmojiTabStripView = mCurrentInputView.findViewById(R.id.emoji_tab_strip);
         mClipboardStripView = mCurrentInputView.findViewById(R.id.clipboard_strip);
         mClipboardStripScrollView = mCurrentInputView.findViewById(R.id.clipboard_strip_scroll_view);
