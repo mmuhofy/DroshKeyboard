@@ -765,6 +765,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public View onCreateInputView() {
         StatsUtils.onCreateInputView();
+        updateWindowBlur();
         return mKeyboardSwitcher.onCreateInputView(KtxKt.getDisplayContext(this), mIsHardwareAcceleratedDrawingEnabled);
     }
 
@@ -794,6 +795,9 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onStartInput(final EditorInfo editorInfo, final boolean restarting) {
         mHandler.onStartInput(editorInfo, restarting);
+        // Re-applied on every input start so a theme switch takes effect
+        // without restarting the keyboard. Idempotent and cheap.
+        updateWindowBlur();
     }
 
     @Override
@@ -1817,9 +1821,85 @@ public class LatinIME extends InputMethodService implements
     }
 
     // slightly modified from Simple Keyboard: https://github.com/rkkr/simple-keyboard/blob/master/app/src/main/java/rkr/simplekeyboard/inputmethod/latin/LatinIME.java
+    /**
+     * Background blur behind the IME window, active only with the Drosh
+     * glass theme. The theme's own background color is translucent, so the
+     * blurred app content shows through around the opaque keys.
+     *
+     * Requires API 31+ for setBackgroundBlurRadius; below that the call is
+     * skipped and the theme simply renders as a dark surface. Turning blur
+     * off when another theme is selected restores the default opaque window.
+     */
+    private void updateWindowBlur() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return;
+        final Window window = getWindow().getWindow();
+        if (window == null) return;
+        if (dev.drosh.ime.keyboard.KeyboardTheme.isDroshGlassActive(this)) {
+            window.setBackgroundBlurRadius(80);
+            // The blur only shows through a translucent window. The input
+            // view itself already paints the translucent glass color, so the
+            // window behind it just needs to get out of the way.
+            window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(
+                    android.graphics.Color.TRANSPARENT));
+        } else {
+            window.setBackgroundBlurRadius(0);
+            window.setBackgroundDrawable(null);
+        }
+        updateGlassChrome();
+    }
+
+    /**
+     * Rounded top corners + top hairline, only with the glass theme.
+     *
+     * Clips the keyboard frame to a top-rounded outline and shows the
+     * hairline view from main_keyboard_frame.xml. Everything else keeps the
+     * stock rectangular frame so no other theme is affected.
+     */
+    private void updateGlassChrome() {
+        final boolean glass = dev.drosh.ime.keyboard.KeyboardTheme.isDroshGlassActive(this);
+        final android.view.Window window = getWindow() != null ? getWindow().getWindow() : null;
+        if (window == null) return;
+        final android.view.View inputView = window.getDecorView();
+        if (inputView == null) return;
+        final android.view.View edge =
+                inputView.findViewById(getResources().getIdentifier(
+                        "glass_top_edge", "id", getPackageName()));
+        if (edge != null) {
+            edge.setVisibility(glass
+                    ? android.view.View.VISIBLE : android.view.View.GONE);
+        }
+        final android.view.View frame =
+                inputView.findViewById(getResources().getIdentifier(
+                        "main_keyboard_frame", "id", getPackageName()));
+        if (frame == null) return;
+        if (glass) {
+            final float radius = 26f * getResources().getDisplayMetrics().density;
+            frame.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                @Override
+                public void getOutline(android.view.View view, android.graphics.Outline outline) {
+                    // Top corners only: the bottom sits on the screen edge,
+                    // and rounding it would cut a notch out of the keyboard.
+                    final android.graphics.Path path = new android.graphics.Path();
+                    final float w = view.getWidth();
+                    final float h = view.getHeight();
+                    final float[] radii = new float[]{
+                            radius, radius, radius, radius,
+                            0f, 0f, 0f, 0f,
+                    };
+                    path.addRoundRect(0f, 0f, w, h, radii,
+                            android.graphics.Path.Direction.CW);
+                    outline.setConvexPath(path);
+                }
+            });
+            frame.setClipToOutline(true);
+        } else {
+            frame.setClipToOutline(false);
+            frame.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
+        }
+    }
+
     @SuppressWarnings("deprecation")
-    private void setNavigationBarColor() {
-        final SettingsValues settingsValues = mSettings.getCurrent();
+    private void setNavigationBarColor() {        final SettingsValues settingsValues = mSettings.getCurrent();
         if (!settingsValues.mCustomNavBarColor)
             return;
         final int color = settingsValues.mColors.get(ColorType.NAVIGATION_BAR);

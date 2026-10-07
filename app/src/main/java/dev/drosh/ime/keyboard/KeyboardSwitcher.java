@@ -34,6 +34,7 @@ import androidx.annotation.Nullable;
 
 import dev.drosh.ime.event.Event;
 import dev.drosh.ime.keyboard.clipboard.ClipboardHistoryView;
+import dev.drosh.ime.keyboard.snippets.SnippetsView;
 import dev.drosh.ime.keyboard.emoji.EmojiPalettesView;
 import dev.drosh.ime.keyboard.internal.KeyboardState;
 import dev.drosh.ime.keyboard.internal.LayoutDirective;
@@ -76,6 +77,7 @@ public final class KeyboardSwitcher {
     private SuggestionStripView mSuggestionStripView;
     private FrameLayout mStripContainer;
     private ClipboardHistoryView mClipboardHistoryView;
+    private SnippetsView mSnippetsView;
     private TextView mFakeToastView;
     private ImageView mBackgroundGatheringIndicator;
     private LatinIME mLatinIME;
@@ -178,7 +180,7 @@ public final class KeyboardSwitcher {
     }
 
     public void saveKeyboardState() {
-        if (getKeyboard() != null || isShowingEmojiPalettes() || isShowingClipboardHistory()) {
+        if (getKeyboard() != null || isShowingEmojiPalettes() || isShowingClipboardHistory() || isShowingSnippets()) {
             mState.onSaveKeyboardState();
         }
     }
@@ -269,6 +271,7 @@ public final class KeyboardSwitcher {
         SYMBOLS_SHIFTED(KeyboardElement.SYMBOLS_SHIFTED),
         EMOJI(KeyboardElement.EMOJI_RECENTS),
         CLIPBOARD(KeyboardElement.CLIPBOARD),
+        SNIPPETS(KeyboardElement.SNIPPETS),
         OTHER(null);
 
         @Nullable final KeyboardElement mKeyboardElement;
@@ -279,7 +282,7 @@ public final class KeyboardSwitcher {
     }
 
     public KeyboardSwitchState getKeyboardSwitchState() {
-        boolean hidden = !isShowingEmojiPalettes() && !isShowingClipboardHistory()
+        boolean hidden = !isShowingEmojiPalettes() && !isShowingClipboardHistory() && !isShowingSnippets()
                 && (mKeyboardLayoutSet == null
                 || mKeyboardView == null
                 || !mKeyboardView.isShown());
@@ -289,6 +292,8 @@ public final class KeyboardSwitcher {
             return KeyboardSwitchState.EMOJI;
         } else if (isShowingClipboardHistory()) {
             return KeyboardSwitchState.CLIPBOARD;
+        } else if (isShowingSnippets()) {
+            return KeyboardSwitchState.SNIPPETS;
         } else if (isShowingKeyboardId(KeyboardElement.SYMBOLS_SHIFTED)) {
             return KeyboardSwitchState.SYMBOLS_SHIFTED;
         }
@@ -314,6 +319,8 @@ public final class KeyboardSwitcher {
 
                 mClipboardHistoryView.stopClipboardHistory();
                 mClipboardHistoryView.setVisibility(View.GONE);
+                mSnippetsView.stopSnippets();
+                mSnippetsView.setVisibility(View.GONE);
 
                 mMainKeyboardFrame.setVisibility(View.VISIBLE);
                 mKeyboardView.setVisibility(View.VISIBLE);
@@ -368,12 +375,15 @@ public final class KeyboardSwitcher {
         // Reload the entire keyboard, and switch to the previous layout
         final boolean wasEmoji = isShowingEmojiPalettes();
         final boolean wasClipboard = isShowingClipboardHistory();
+        final boolean wasSnippets = isShowingSnippets();
         loadKeyboard(mLatinIME.getCurrentInputEditorInfo(), Settings.getValues(),
                 mLatinIME.getCurrentAutoCapsState(), mLatinIME.getCurrentRecapitalizeState(), null);
         if (wasEmoji) {
             setEmojiKeyboard();
         } else if (wasClipboard) {
             setClipboardKeyboard();
+        } else if (wasSnippets) {
+            setSnippetsKeyboard();
         }
     }
 
@@ -474,8 +484,12 @@ public final class KeyboardSwitcher {
         return mClipboardHistoryView != null && mClipboardHistoryView.isShown();
     }
 
+    public boolean isShowingSnippets() {
+        return mSnippetsView != null && mSnippetsView.isShown();
+    }
+
     public boolean isShowingPopupKeysPanel() {
-        if (isShowingEmojiPalettes() || isShowingClipboardHistory()) {
+        if (isShowingEmojiPalettes() || isShowingClipboardHistory() || isShowingSnippets()) {
             return false;
         }
         return mKeyboardView.isShowingPopupKeysPanel();
@@ -490,6 +504,8 @@ public final class KeyboardSwitcher {
             return mEmojiPalettesView;
         } else if (isShowingClipboardHistory()) {
             return mClipboardHistoryView;
+        } else if (isShowingSnippets()) {
+            return mSnippetsView;
         }
         return mKeyboardView;
     }
@@ -522,6 +538,9 @@ public final class KeyboardSwitcher {
         }
         if (mClipboardHistoryView != null) {
             mClipboardHistoryView.stopClipboardHistory();
+        }
+        if (mSnippetsView != null) {
+            mSnippetsView.stopSnippets();
         }
     }
 
@@ -562,6 +581,7 @@ public final class KeyboardSwitcher {
         mEmojiPalettesView.setKeyboardActionListener(mLatinIME.mKeyboardActionListener);
         mClipboardHistoryView.setHardwareAcceleratedDrawingEnabled(isHardwareAcceleratedDrawingEnabled);
         mClipboardHistoryView.setKeyboardActionListener(mLatinIME.mKeyboardActionListener);
+        mSnippetsView.setKeyboardActionListener(mLatinIME.mKeyboardActionListener);
         mEmojiTabStripView = mCurrentInputView.findViewById(R.id.emoji_tab_strip);
         mClipboardStripView = mCurrentInputView.findViewById(R.id.clipboard_strip);
         mClipboardStripScrollView = mCurrentInputView.findViewById(R.id.clipboard_strip_scroll_view);
@@ -660,6 +680,8 @@ public final class KeyboardSwitcher {
             mEmojiPalettesView.startEmojiPalettes(mKeyboardView.getKeyVisualAttribute(),
                 mLatinIME.getCurrentInputEditorInfo(), mLatinIME.mKeyboardActionListener);
             mEmojiPalettesView.setVisibility(View.VISIBLE);
+            mSnippetsView.stopSnippets();
+            mSnippetsView.setVisibility(View.GONE);
         }
 
         @Override
@@ -681,6 +703,25 @@ public final class KeyboardSwitcher {
             mClipboardHistoryView.startClipboardHistory(mLatinIME.getClipboardHistoryManager(), mKeyboardView.getKeyVisualAttribute(),
                 mLatinIME.getCurrentInputEditorInfo(), mLatinIME.mKeyboardActionListener);
             mClipboardHistoryView.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        public void setSnippetsKeyboard() {
+            if (DEBUG_ACTION) {
+                Log.d(TAG, "setSnippetsKeyboard");
+            }
+            mMainKeyboardFrame.setVisibility(View.VISIBLE);
+            // Same alignment contract as the clipboard view: the frame stays
+            // visible, only the key grid is replaced.
+            mKeyboardView.setVisibility(View.GONE);
+            mEmojiTabStripView.setVisibility(View.GONE);
+            mSuggestionStripView.setVisibility(View.GONE);
+            mStripContainer.setVisibility(getSecondaryStripVisibility());
+            mEmojiPalettesView.setVisibility(View.GONE);
+            mClipboardHistoryView.setVisibility(View.GONE);
+            mClipboardHistoryView.stopClipboardHistory();
+            mSnippetsView.startSnippets(mLatinIME.mKeyboardActionListener);
+            mSnippetsView.setVisibility(View.VISIBLE);
         }
 
         @Override

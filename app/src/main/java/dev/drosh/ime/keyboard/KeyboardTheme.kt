@@ -54,6 +54,7 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_DARK = "dark"
         const val THEME_DARKER = "darker"
         const val THEME_BLACK = "black"
+        const val THEME_DROSH_GLASS = "drosh_glass"
         const val THEME_DYNAMIC = "dynamic"
         const val THEME_BLUE_GRAY = "blue_gray"
         const val THEME_BROWN = "brown"
@@ -68,6 +69,7 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         fun getAvailableDefaultColors(prefs: SharedPreferences, isNight: Boolean) = listOfNotNull(
             if (!isNight) THEME_LIGHT else null, THEME_DARK,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) THEME_DYNAMIC else null,
+            THEME_DROSH_GLASS,
             if (prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE) == STYLE_HOLO) THEME_HOLO_WHITE else null,
             THEME_DARKER,
             THEME_BLACK,
@@ -144,6 +146,23 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
             return getThemeColors(themeName!!, themeStyle!!, context, prefs, isNight)
         }
 
+        /**
+         * Whether the glass theme is currently selected. The IME window uses
+         * this to decide on translucency + background blur; the keyboard
+         * content itself comes from [getColorsForCurrentTheme] as usual.
+         */
+        @JvmStatic
+        fun isDroshGlassActive(context: Context): Boolean {
+            val prefs = context.prefs()
+            val isNight = SettingsActivity.forceNight
+                ?: (ResourceUtils.isNight(context.resources) && prefs.getBoolean(Settings.PREF_THEME_DAY_NIGHT, Defaults.PREF_THEME_DAY_NIGHT))
+            val themeName = SettingsActivity.forceTheme ?: if (isNight)
+                prefs.getString(Settings.PREF_THEME_COLORS_NIGHT, Defaults.PREF_THEME_COLORS_NIGHT)
+            else
+                prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS)
+            return themeName == THEME_DROSH_GLASS
+        }
+
         private fun getThemeColors(themeName: String, themeStyle: String, context: Context, prefs: SharedPreferences, isNight: Boolean): Colors {
             val hasBorders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
             val backgroundImage = Settings.readUserBackgroundImage(context, isNight)
@@ -174,6 +193,21 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     "#364248".toColorInt(),
                     ContextCompat.getColor(context, R.color.key_text_color_lxx_dark),
                     ContextCompat.getColor(context, R.color.key_hint_letter_color_lxx_dark),
+                    keyboardBackground = backgroundImage
+                )
+                THEME_DROSH_GLASS -> DefaultColors(
+                    // Dark glass surface: keys stay opaque so labels read on
+                    // any backdrop, the window itself is translucent so the
+                    // system blur shows through around them.
+                    themeStyle,
+                    hasBorders,
+                    "#4C9EFF".toColorInt(),
+                    "#D914161C".toColorInt(),
+                    "#2B2F3A".toColorInt(),
+                    "#232733".toColorInt(),
+                    "#2B2F3A".toColorInt(),
+                    "#F2F2F2".toColorInt(),
+                    "#AEB4C0".toColorInt(),
                     keyboardBackground = backgroundImage
                 )
                 THEME_HOLO_WHITE -> DefaultColors(

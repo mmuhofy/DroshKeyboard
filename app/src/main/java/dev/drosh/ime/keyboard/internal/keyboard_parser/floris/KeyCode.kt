@@ -76,6 +76,7 @@ object KeyCode {
     const val IME_UI_MODE_TEXT =            -211
     const val EMOJI =                       -212 // IME_UI_MODE_MEDIA
     const val CLIPBOARD =                   -213 // IME_UI_MODE_CLIPBOARD
+    const val SNIPPETS =                    -214 // IME_UI_MODE_SNIPPETS
 
     const val SYSTEM_INPUT_METHOD_PICKER =  -221
     //const val SYSTEM_PREV_INPUT_METHOD =    -222
@@ -211,7 +212,7 @@ object KeyCode {
         MEDIA_PREVIOUS, VOL_UP, VOL_DOWN, MUTE, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, BACK,
         TIMESTAMP, CTRL_LEFT, CTRL_RIGHT, ALT_LEFT, ALT_RIGHT, META_LEFT, META_RIGHT, SEND_INTENT_ONE, SEND_INTENT_TWO,
         SEND_INTENT_THREE, EMOJI_SEARCH, INLINE_EMOJI_SEARCH_DONE, META_LOCK,
-        BACKGROUND_GATHERING, BACKGROUND_GATHERING_TEMP_OFF, DPAD,
+        BACKGROUND_GATHERING, BACKGROUND_GATHERING_TEMP_OFF, DPAD, SNIPPETS,
         -> this
 
         KEY_REPEAT if (longPress) -> this

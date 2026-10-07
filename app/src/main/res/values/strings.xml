@@ -72,6 +72,26 @@
     <string name="language_switch_key_switch_input_method">Switch to other input methods</string>
     <!-- Option name for switching language / subtype only -->
     <string name="switch_language">Switch language</string>
+    <!-- Toolbar key that opens the snippet list -->
+    <string name="snippets">Snippets</string>
+    <!-- Empty state of the snippet list -->
+    <string name="snippets_empty">No snippets yet. Add one with the + button, or define them in ~/.drosh/snippets.json as {"alias": "command"}.</string>
+    <!-- Dialog title when adding a snippet -->
+    <string name="snippet_add_title">Add snippet</string>
+    <!-- Dialog title when editing a snippet -->
+    <string name="snippet_edit_title">Edit snippet</string>
+    <!-- Alias field label -->
+    <string name="snippet_alias_hint">Alias (e.g. gp)</string>
+    <!-- Command field label -->
+    <string name="snippet_command_hint">Command (e.g. git push)</string>
+    <!-- Delete confirmation -->
+    <string name="snippet_delete_title">Delete snippet?</string>
+    <!-- Generic dialog buttons, matching existing labels where possible -->
+    <string name="snippet_save">Save</string>
+    <string name="snippet_cancel">Cancel</string>
+    <string name="snippet_delete">Delete</string>
+    <!-- Close button of the snippet list -->
+    <string name="snippet_close">Close snippets</string>
     <!-- Option name for switching language / subtype and input method -->
     <string name="language_switch_key_switch_both">Switch both</string>
     <!-- Option to show language switch key -->
@@ -733,6 +753,8 @@ New dictionary:
     <string name="theme_name_darker" tools:keep="@string/theme_name_darker">Darker</string>
     <!-- Theme name for black theme (based on old amoled black) -->
     <string name="theme_name_black" tools:keep="@string/theme_name_black">Black</string>
+    <!-- Theme name for the Drosh glass theme -->
+    <string name="theme_name_drosh_glass" tools:keep="@string/theme_name_drosh_glass">Drosh Glass</string>
     <!-- Theme name for dynamic colors light theme -->
     <string name="theme_name_dynamic" tools:keep="@string/theme_name_dynamic">Dynamic colors</string>
     <!-- Theme name for blue-gray theme -->

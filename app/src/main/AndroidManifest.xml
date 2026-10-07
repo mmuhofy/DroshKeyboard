@@ -13,6 +13,9 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Read Drosh terminal state and snippets. Signature-level: only a
+         same-signed Drosh build can serve this, which is exactly our setup. -->
+    <uses-permission android:name="dev.drosh.permission.READ_COMMAND_STATE" />
 
     <application android:label="@string/english_ime_name"
             android:name="dev.drosh.ime.latin.App"
