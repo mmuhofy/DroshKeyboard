@@ -227,6 +227,10 @@ public final class KeyboardSwitcher {
         mState.setLayout(LayoutDirective.Utility.CLIPBOARD);
     }
 
+    public void setSnippetsKeyboard() {
+        mState.setLayout(LayoutDirective.Utility.SNIPPETS);
+    }
+
     public boolean isImeSuppressedByHardwareKeyboard(
             @NonNull final SettingsValues settingsValues,
             @NonNull final KeyboardSwitchState toggleState) {
