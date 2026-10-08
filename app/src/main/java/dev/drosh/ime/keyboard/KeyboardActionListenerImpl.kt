@@ -153,6 +153,9 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
 
     override fun onTextInput(text: String?) = latinIME.onTextInput(text)
 
+    override fun onSpecialKeyEvent(keyCode: Int, metaState: Int) =
+        latinIME.sendSpecialKeyEvent(keyCode, metaState)
+
     override fun onContent(content: InputContentInfoCompat) {
         val editorInfo = latinIME.currentInputEditorInfo
         val editorMimeTypes = EditorInfoCompat.getContentMimeTypes(editorInfo)

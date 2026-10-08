@@ -782,6 +782,11 @@ public final class InputLogic {
             case KeyCode.CLIPBOARD_PASTE:
                 paste(mLatinIME.getCurrentInputEditorInfo().packageName);
                 break;
+            case KeyCode.SPECIAL_KEYS:
+                // Toggling the special keys layer is handled in
+                // {@link KeyboardState#onEvent(Event,int)}. The case only exists so
+                // the functional event is recognised instead of throwing.
+                break;
             case KeyCode.SNIPPETS:
                 // Toggling the snippets panel is handled in
                 // {@link KeyboardState#onEvent(Event,int)}, so there is no editor

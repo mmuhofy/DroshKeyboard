@@ -36,6 +36,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
         fun setEmojiKeyboard()
         fun setClipboardKeyboard()
         fun setSnippetsKeyboard()
+        fun setSpecialKeysKeyboard()
         fun setNumpadKeyboard()
         fun setDpadKeyboard()
         fun setSymbolsKeyboard()
@@ -172,6 +173,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
             Utility.EMOJI -> switchActions.setEmojiKeyboard()
             Utility.CLIPBOARD -> switchActions.setClipboardKeyboard()
             Utility.SNIPPETS -> switchActions.setSnippetsKeyboard()
+            Utility.SPECIAL_KEYS -> switchActions.setSpecialKeysKeyboard()
             Utility.NUMPAD -> switchActions.setNumpadKeyboard()
             Utility.DPAD -> switchActions.setDpadKeyboard()
         }
@@ -477,6 +479,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
                 toggleLayout(Utility.CLIPBOARD, autoCapsFlags, recapitalizeMode)
             }
             KeyCode.SNIPPETS -> toggleLayout(Utility.SNIPPETS, autoCapsFlags, recapitalizeMode)
+            KeyCode.SPECIAL_KEYS -> toggleLayout(Utility.SPECIAL_KEYS, autoCapsFlags, recapitalizeMode)
             KeyCode.NUMPAD -> toggleLayout(Utility.NUMPAD, autoCapsFlags, recapitalizeMode)
             KeyCode.DPAD -> toggleLayout(Utility.DPAD, autoCapsFlags, recapitalizeMode)
             KeyCode.SYMBOL -> toggleLayout(Utility.SYMBOLS, autoCapsFlags, recapitalizeMode)
@@ -506,7 +509,8 @@ class KeyboardState(private val switchActions: SwitchActions) {
         SYMBOLS_SHIFTED,
         EMOJI,
         CLIPBOARD,
-        SNIPPETS,
+SNIPPETS,
+        SPECIAL_KEYS,
         NUMPAD,
         DPAD,
     ;
@@ -518,6 +522,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
                 EMOJI -> Utility.EMOJI
                 CLIPBOARD -> Utility.CLIPBOARD
                 SNIPPETS -> Utility.SNIPPETS
+                SPECIAL_KEYS -> Utility.SPECIAL_KEYS
                 NUMPAD -> Utility.NUMPAD
                 DPAD -> Utility.DPAD
             }

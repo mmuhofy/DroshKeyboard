@@ -125,6 +125,16 @@ public interface KeyboardActionListener {
     void onUpWithDeletePointerActive();
     void resetMetaState();
 
+    /**
+     * Sends a raw hardware key event, optionally with modifier bits set, straight to
+     * the editor. Used by the special keys layer for keys that have no soft key
+     * equivalent, such as Ctrl, Alt, Fn, Tab and the arrow keys.
+     *
+     * @param keyCode an android.view.KeyEvent key code
+     * @param metaState a KeyEvent meta state mask, e.g. KeyEvent.META_CTRL_ON, or 0
+     */
+    void onSpecialKeyEvent(int keyCode, int metaState);
+
     KeyboardActionListener EMPTY_LISTENER = new Adapter();
 
     enum SwipeAction { NONE, MOVE_CURSOR, SWITCH_LANGUAGE, TOGGLE_NUMPAD, TOGGLE_DPAD, HIDE_KEYBOARD, TOUCHPAD_MODE }
@@ -183,5 +193,7 @@ public interface KeyboardActionListener {
         public void onUpWithDeletePointerActive() {}
         @Override
         public void resetMetaState() {}
+        @Override
+        public void onSpecialKeyEvent(int keyCode, int metaState) {}
     }
 }

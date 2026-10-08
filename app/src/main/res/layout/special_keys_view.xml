@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SPDX-License-Identifier: GPL-3.0-only
+-->
+<dev.drosh.ime.keyboard.special.SpecialKeysView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:orientation="vertical"
+    android:visibility="gone"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:id="@+id/special_keys_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/special_keys_title"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <ImageButton
+            android:id="@+id/special_keys_close"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/special_keys_close"
+            android:src="@drawable/ic_close" />
+    </LinearLayout>
+
+    <!-- Modifier row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:id="@+id/special_key_ctrl"
+            style="@style/SpecialKeyButton"
+            android:text="@string/special_keys_ctrl" />
+
+        <TextView
+            android:id="@+id/special_key_alt"
+            style="@style/SpecialKeyButton"
+            android:text="@string/special_keys_alt" />
+
+        <TextView
+            android:id="@+id/special_key_fn"
+            style="@style/SpecialKeyButton"
+            android:text="@string/special_keys_fn" />
+
+        <TextView
+            android:id="@+id/special_key_tab"
+            style="@style/SpecialKeyButton"
+            android:text="@string/special_keys_tab" />
+
+        <TextView
+            android:id="@+id/special_key_esc"
+            style="@style/SpecialKeyButton"
+            android:text="@string/special_keys_esc" />
+    </LinearLayout>
+
+    <!-- Arrow cluster -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/special_key_left"
+            style="@style/SpecialKeyButton"
+            android:layout_weight="2"
+            android:text="@string/special_keys_left" />
+
+        <TextView
+            android:id="@+id/special_key_up"
+            style="@style/SpecialKeyButton"
+            android:layout_weight="1"
+            android:text="@string/special_keys_up" />
+
+        <TextView
+            android:id="@+id/special_key_down"
+            style="@style/SpecialKeyButton"
+            android:layout_weight="1"
+            android:text="@string/special_keys_down" />
+
+        <TextView
+            android:id="@+id/special_key_right"
+            style="@style/SpecialKeyButton"
+            android:layout_weight="2"
+            android:text="@string/special_keys_right" />
+    </LinearLayout>
+</dev.drosh.ime.keyboard.special.SpecialKeysView>

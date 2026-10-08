@@ -92,6 +92,20 @@
     <string name="snippet_delete">Delete</string>
     <!-- Close button of the snippet list -->
     <string name="snippet_close">Close snippets</string>
+    <!-- Toolbar key that opens the special keys layer -->
+    <string name="special_keys">Special keys</string>
+    <!-- Special keys layer -->
+    <string name="special_keys_title">Special keys</string>
+    <string name="special_keys_ctrl">Ctrl</string>
+    <string name="special_keys_alt">Alt</string>
+    <string name="special_keys_tab">Tab</string>
+    <string name="special_keys_fn">Fn</string>
+    <string name="special_keys_esc">Esc</string>
+    <string name="special_keys_up">Up</string>
+    <string name="special_keys_down">Down</string>
+    <string name="special_keys_left">Left</string>
+    <string name="special_keys_right">Right</string>
+    <string name="special_keys_close">Close special keys</string>
     <!-- Option name for switching language / subtype and input method -->
     <string name="language_switch_key_switch_both">Switch both</string>
     <!-- Option to show language switch key -->

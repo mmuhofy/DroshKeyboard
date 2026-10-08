@@ -1853,6 +1853,16 @@ public class LatinIME extends InputMethodService implements
     }
 
     /**
+     * Forwards a raw hardware key event from the special keys layer to the editor.
+     *
+     * The layer has no soft key equivalent for Ctrl, Alt, Fn, Tab or the arrows, so
+     * the event is sent as a real key event with the requested modifier bits.
+     */
+    public void sendSpecialKeyEvent(final int keyCode, final int metaState) {
+        mInputLogic.sendDownUpKeyEventWithMetaState(keyCode, metaState);
+    }
+
+    /**
      * Rounded top corners + top hairline, only with the glass theme.
      *
      * Clips the keyboard frame to a top-rounded outline and shows the

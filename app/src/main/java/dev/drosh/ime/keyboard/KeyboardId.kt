@@ -120,7 +120,8 @@ enum class KeyboardElement(val descriptionResId: Int) {
     EMOJI_BOTTOM_ROW(R.string.spoken_description_emoji),
     CLIPBOARD(R.string.spoken_description_mode_clipboard),
     CLIPBOARD_BOTTOM_ROW(R.string.spoken_description_mode_clipboard),
-    SNIPPETS(R.string.spoken_description_mode_snippets);
+    SNIPPETS(R.string.spoken_description_mode_snippets),
+    SPECIAL_KEYS(R.string.spoken_description_mode_special_keys);
 
     val isAlphabet get() = this < SYMBOLS
     val isAlphaOrSymbol get() = this <= SYMBOLS_SHIFTED
