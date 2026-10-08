@@ -782,6 +782,12 @@ public final class InputLogic {
             case KeyCode.CLIPBOARD_PASTE:
                 paste(mLatinIME.getCurrentInputEditorInfo().packageName);
                 break;
+            case KeyCode.SNIPPETS:
+                // Toggling the snippets panel is handled in
+                // {@link KeyboardState#onEvent(Event,int)}, so there is no editor
+                // action to perform here. The case only exists so the functional
+                // event is recognised instead of throwing "Unknown event".
+                break;
             case KeyCode.SHIFT_ENTER:
                 // todo: try using sendDownUpKeyEventWithMetaState() and remove the key code maybe
                 final Event tmpEvent = Event.createSoftwareKeypressEvent(Constants.CODE_ENTER,
