@@ -574,19 +574,10 @@ public final class KeyboardSwitcher {
         mMainKeyboardFrame = mCurrentInputView.findViewById(R.id.main_keyboard_frame);
         mEmojiPalettesView = mCurrentInputView.findViewById(R.id.emoji_palettes_view);
                 mClipboardHistoryView = mCurrentInputView.findViewById(R.id.clipboard_history_view);
-                mSnippetsView = mCurrentInputView.findViewById(R.id.snippets_view);
-                if (mSnippetsView == null) {
-                    mSnippetsView = new dev.drosh.ime.keyboard.snippets.SnippetsView(context, null, 0) {
-                        @Override
-                        protected void onDetachedFromWindow() {
-                            stopSnippets();
-                            super.onDetachedFromWindow();
-                        }
-                    };
-                    // The snippet panel was not inflated from XML but added programmatically
-                    // to avoid missing the snippet tab action when the custom view is enabled.
-                }
-                mFakeToastView = mCurrentInputView.findViewById(R.id.fakeToast);
+        mSnippetsView = mCurrentInputView.findViewById(R.id.snippets_view);
+        if (mSnippetsView != null)
+            mSnippetsView.setVisibility(View.GONE);
+        mFakeToastView = mCurrentInputView.findViewById(R.id.fakeToast);
 
         mKeyboardViewWrapper = mCurrentInputView.findViewById(R.id.keyboard_view_wrapper);
         mKeyboardViewWrapper.setKeyboardActionListener(mLatinIME.mKeyboardActionListener);
