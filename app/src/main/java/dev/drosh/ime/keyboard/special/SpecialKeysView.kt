@@ -62,9 +62,11 @@ class SpecialKeysView @JvmOverloads constructor(
 
         // Modifier keys. Pressing one sends the modifier itself, so the editor
         // sees e.g. a Ctrl+Arrow combination when the next key arrives.
+        // Android has no KEYCODE_FN; the Meta key is what most keyboards label
+        // Fn, so that is what gets sent here.
         bind(R.id.special_key_ctrl, KeyEvent.KEYCODE_CTRL_LEFT, KeyEvent.META_CTRL_ON)
         bind(R.id.special_key_alt, KeyEvent.KEYCODE_ALT_LEFT, KeyEvent.META_ALT_ON)
-        bind(R.id.special_key_fn, KeyEvent.KEYCODE_FN, KeyEvent.META_META_ON)
+        bind(R.id.special_key_fn, KeyEvent.KEYCODE_META_LEFT, KeyEvent.META_META_ON)
 
         findViewById<View>(R.id.special_keys_close).setOnClickListener { toggleBack() }
     }
