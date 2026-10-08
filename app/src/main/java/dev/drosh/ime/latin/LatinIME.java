@@ -798,6 +798,7 @@ public class LatinIME extends InputMethodService implements
         // Re-applied on every input start so a theme switch takes effect
         // without restarting the keyboard. Idempotent and cheap.
         updateWindowBlur();
+        updateGlassChrome();
     }
 
     @Override
@@ -1030,6 +1031,10 @@ public class LatinIME extends InputMethodService implements
             setNavigationBarColor();
             workaroundForHuaweiStatusBarIssue();
         }
+        // The glass hairline and the rounded top corners live inside the
+        // input view, so they can only be looked up once that view is
+        // attached to the window. onCreateInputView() runs too early.
+        updateGlassChrome();
     }
 
     @Override
@@ -1845,7 +1850,6 @@ public class LatinIME extends InputMethodService implements
             window.setBackgroundBlurRadius(0);
             window.setBackgroundDrawable(null);
         }
-        updateGlassChrome();
     }
 
     /**

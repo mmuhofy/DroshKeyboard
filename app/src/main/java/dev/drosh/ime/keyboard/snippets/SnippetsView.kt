@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -120,37 +121,59 @@ class SnippetsView @JvmOverloads constructor(
             aliasField.isEnabled = false
             commandField.setText(existing.command)
         }
-        AlertDialog.Builder(context)
-            .setTitle(if (existing == null) R.string.snippet_add_title else R.string.snippet_edit_title)
-            .setView(view)
-            .setPositiveButton(R.string.snippet_save) { _, _ ->
-                val alias = aliasField.text.toString().trim()
-                val command = commandField.text.toString().trim()
-                if (alias.isEmpty() || command.isEmpty()) return@setPositiveButton
-                Thread {
-                    val ok = if (existing == null) {
-                        client.addSnippet(alias, command)
-                    } else {
-                        client.updateSnippet(alias, command)
-                    }
-                    if (ok) post { refresh() }
-                }.start()
-            }
-            .setNegativeButton(R.string.snippet_cancel, null)
-            .show()
+        showImeDialog(
+            AlertDialog.Builder(context)
+                .setTitle(if (existing == null) R.string.snippet_add_title else R.string.snippet_edit_title)
+                .setView(view)
+                .setPositiveButton(R.string.snippet_save) { _, _ ->
+                    val alias = aliasField.text.toString().trim()
+                    val command = commandField.text.toString().trim()
+                    if (alias.isEmpty() || command.isEmpty()) return@setPositiveButton
+                    Thread {
+                        val ok = if (existing == null) {
+                            client.addSnippet(alias, command)
+                        } else {
+                            client.updateSnippet(alias, command)
+                        }
+                        if (ok) post { refresh() }
+                    }.start()
+                }
+                .setNegativeButton(R.string.snippet_cancel, null),
+        )
     }
 
     private fun showDeleteDialog(snippet: DroshStateClient.Snippet) {
-        AlertDialog.Builder(context)
-            .setTitle(R.string.snippet_delete_title)
-            .setMessage(snippet.alias)
-            .setPositiveButton(R.string.snippet_delete) { _, _ ->
-                Thread {
-                    if (client.deleteSnippet(snippet.alias)) post { refresh() }
-                }.start()
-            }
-            .setNegativeButton(R.string.snippet_cancel, null)
-            .show()
+        showImeDialog(
+            AlertDialog.Builder(context)
+                .setTitle(R.string.snippet_delete_title)
+                .setMessage(snippet.alias)
+                .setPositiveButton(R.string.snippet_delete) { _, _ ->
+                    Thread {
+                        if (client.deleteSnippet(snippet.alias)) post { refresh() }
+                    }.start()
+                }
+                .setNegativeButton(R.string.snippet_cancel, null),
+        )
+    }
+
+    /**
+     * Shows a dialog built from the view context.
+     *
+     * An InputMethodService is not an Activity, so its views have no window
+     * token. A plain `AlertDialog.show()` therefore fails with
+     * BadTokenException "token null is not valid". The token of the attached
+     * IME window has to be handed over explicitly and the window typed as an
+     * attached dialog. This mirrors LatinIME.showInputPickerDialog().
+     */
+    private fun showImeDialog(builder: AlertDialog.Builder) {
+        val dialog = builder.create()
+        val window = dialog.window ?: return
+        val params = window.attributes
+        params.token = rootView?.windowToken
+        params.type = WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG
+        window.attributes = params
+        window.addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+        dialog.show()
     }
 
     private inner class SnippetAdapter : RecyclerView.Adapter<SnippetHolder>() {
