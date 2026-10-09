@@ -78,23 +78,59 @@
 
             <TextView
                 android:id="@+id/functional_key_ctrl"
-                style="@style/FunctionalKeyButton"
-                android:text="@string/special_keys_ctrl" />
+                android:text="@string/special_keys_ctrl"
+                style="?attr/suggestionWordStyle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:gravity="center"
+                android:textAllCaps="false"
+                android:clickable="true"
+                android:focusable="true"  />
 
             <TextView
                 android:id="@+id/functional_key_alt"
-                style="@style/FunctionalKeyButton"
-                android:text="@string/special_keys_alt" />
+                android:text="@string/special_keys_alt"
+                style="?attr/suggestionWordStyle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:gravity="center"
+                android:textAllCaps="false"
+                android:clickable="true"
+                android:focusable="true"  />
 
             <TextView
                 android:id="@+id/functional_key_esc"
-                style="@style/FunctionalKeyButton"
-                android:text="@string/special_keys_esc" />
+                android:text="@string/special_keys_esc"
+                style="?attr/suggestionWordStyle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:gravity="center"
+                android:textAllCaps="false"
+                android:clickable="true"
+                android:focusable="true"  />
 
             <TextView
                 android:id="@+id/functional_key_tab"
-                style="@style/FunctionalKeyButton"
-                android:text="@string/special_keys_tab" />
+                android:text="@string/special_keys_tab"
+                style="?attr/suggestionWordStyle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:gravity="center"
+                android:textAllCaps="false"
+                android:clickable="true"
+                android:focusable="true"  />
         </LinearLayout>
     </LinearLayout>
 </merge>
