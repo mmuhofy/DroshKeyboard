@@ -16,6 +16,7 @@ import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.GestureDetector
+import android.view.KeyEvent
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -81,6 +82,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         fun removeSuggestion(word: String?)
         fun removeExternalSuggestions()
         fun onSwipeDownOnToolbar()
+        /**
+         * Sends a raw hardware key event, optionally with modifier bits, to the
+         * editor. Used by the functional keys of the quickbar.
+         */
+        fun onSpecialKeyEvent(keyCode: Int, metaState: Int)
     }
 
     private val moreSuggestionsContainer: View
@@ -119,6 +125,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val pinnedKeys: ViewGroup = findViewById(R.id.pinned_keys)
     private val suggestionsStrip: ViewGroup = findViewById(R.id.suggestions_strip)
     private val toolbarExpandKey = findViewById<ImageButton>(R.id.suggestions_strip_toolbar_key)
+    private val functionalKeys: ViewGroup = findViewById(R.id.functional_keys)
+    private var stripStage = STRIP_STAGE_SUGGESTIONS
     private val incognitoIcon = KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.INCOGNITO.name, context)
     private val toolbarArrowIcon = KeyboardIconsSet.instance.getNewDrawable(KeyboardIconsSet.NAME_TOOLBAR_KEY, context)
     private val defaultToolbarBackground: Drawable = toolbarExpandKey.background
@@ -227,10 +235,23 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         suggestionsStrip.layoutDirection = newLayoutDirection
     }
 
+    /**
+     * The quickbar cycles through three stages when the expand key is pressed:
+     * the pinned keys, the full toolbar, and the functional keys. Callers that
+     * only care about showing or hiding the toolbar keep using this.
+     */
     fun setToolbarVisibility(toolbarVisible: Boolean) {
-        pinnedKeys.isVisible = !toolbarVisible
-        suggestionsStrip.isVisible = !toolbarVisible
+        setStripStage(if (toolbarVisible) STRIP_STAGE_TOOLBAR else STRIP_STAGE_SUGGESTIONS)
+    }
+
+    private fun setStripStage(stage: Int) {
+        stripStage = stage
+        val toolbarVisible = stage == STRIP_STAGE_TOOLBAR
+        val functionalVisible = stage == STRIP_STAGE_FUNCTIONAL
+        pinnedKeys.isVisible = stage == STRIP_STAGE_SUGGESTIONS
+        suggestionsStrip.isVisible = stage == STRIP_STAGE_SUGGESTIONS
         toolbarContainer.isVisible = toolbarVisible
+        functionalKeys.isVisible = functionalVisible
 
         if (DEBUG_SUGGESTIONS) {
             for (view in debugInfoViews) {
@@ -239,6 +260,17 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         }
 
         toolbarExpandKey.scaleX = (if (toolbarVisible) -1f else 1f) * direction
+    }
+
+    /** Advances to the next quickbar stage, wrapping around after the last one. */
+    private fun advanceStripStage() {
+        setStripStage(
+            when (stripStage) {
+                STRIP_STAGE_SUGGESTIONS -> STRIP_STAGE_TOOLBAR
+                STRIP_STAGE_TOOLBAR -> STRIP_STAGE_FUNCTIONAL
+                else -> STRIP_STAGE_SUGGESTIONS
+            }
+        )
     }
 
     fun setSuggestions(suggestions: SuggestedWords, isRtlLanguage: Boolean) {
@@ -336,7 +368,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         }
         AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
         if (view === toolbarExpandKey) {
-            setToolbarVisibility(toolbarContainer.visibility != VISIBLE)
+            advanceStripStage()
+            return
         }
 
         // tag for word views is set in SuggestionStripLayoutHelper (setupWordViewsTextAndColor, layoutPunctuationSuggestions)
@@ -506,6 +539,25 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         pinnedKeys.findViewWithTag<View>(ToolbarKey.VOICE)?.isVisible = show
     }
 
+    /**
+     * Binds the functional keys of the third quickbar stage. They send real key
+     * events because Ctrl, Alt, Esc and Tab have no soft key equivalent, and a
+     * terminal needs them with the meta bits still attached.
+     */
+    private fun setupFunctionalKeys() {
+        fun bind(id: Int, keyCode: Int, metaState: Int) {
+            findViewById<View>(id)?.setOnClickListener {
+                AudioAndHapticFeedbackManager.getInstance()
+                    .performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, it, HapticEvent.KEY_PRESS)
+                listener.onSpecialKeyEvent(keyCode, metaState)
+            }
+        }
+        bind(R.id.functional_key_ctrl, KeyEvent.KEYCODE_CTRL_LEFT, KeyEvent.META_CTRL_ON)
+        bind(R.id.functional_key_alt, KeyEvent.KEYCODE_ALT_LEFT, KeyEvent.META_ALT_ON)
+        bind(R.id.functional_key_esc, KeyEvent.KEYCODE_ESCAPE, 0)
+        bind(R.id.functional_key_tab, KeyEvent.KEYCODE_TAB, 0)
+    }
+
     private fun updateKeys() {
         updateVoiceKey()
         val settingsValues = Settings.getValues()
@@ -520,6 +572,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         }
 
         toolbarExpandKey.setOnClickListener(if (!toolbarIsExpandable) null else this)
+        setupFunctionalKeys()
         pinnedKeys.visibility = suggestionsStrip.visibility
         isExternalSuggestionVisible = false
     }
@@ -549,6 +602,13 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     companion object {
+        /** Quickbar shows the pinned keys next to the suggestions. */
+        private const val STRIP_STAGE_SUGGESTIONS = 0
+        /** Quickbar shows the full toolbar. */
+        private const val STRIP_STAGE_TOOLBAR = 1
+        /** Quickbar shows the functional keys. */
+        private const val STRIP_STAGE_FUNCTIONAL = 2
+
         @JvmField
         var DEBUG_SUGGESTIONS = false
         private const val DEBUG_INFO_TEXT_SIZE_IN_DIP = 6.5f

@@ -1169,6 +1169,11 @@ public class LatinIME extends InputMethodService implements
     }
 
     @Override
+    public void onSpecialKeyEvent(final int keyCode, final int metaState) {
+        sendSpecialKeyEvent(keyCode, metaState);
+    }
+
+    @Override
     public void onDisplayCompletions(final CompletionInfo[] applicationSpecifiedCompletions) {
         if (DebugFlags.DEBUG_ENABLED) {
             Log.i(TAG, "Received completions:");
@@ -1853,10 +1858,10 @@ public class LatinIME extends InputMethodService implements
     }
 
     /**
-     * Forwards a raw hardware key event from the special keys layer to the editor.
+     * Forwards a raw hardware key event from the functional keys to the editor.
      *
-     * The layer has no soft key equivalent for Ctrl, Alt, Fn, Tab or the arrows, so
-     * the event is sent as a real key event with the requested modifier bits.
+     * Ctrl, Alt, Esc and Tab have no soft key equivalent, so they go out as real
+     * key events with the requested modifier bits.
      */
     public void sendSpecialKeyEvent(final int keyCode, final int metaState) {
         mInputLogic.sendDownUpKeyEventWithMetaState(keyCode, metaState);

@@ -63,5 +63,38 @@
             android:minWidth="0dp"
             style="?attr/suggestionWordStyle">
         </LinearLayout>
+        <!-- Third stage of the quickbar: shown when the expand key is pressed
+             again after the full toolbar. Holds the keys that have no soft key
+             equivalent and are needed on a terminal. -->
+        <LinearLayout
+            android:id="@+id/functional_keys"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:visibility="gone"
+            style="?attr/suggestionWordStyle">
+
+            <TextView
+                android:id="@+id/functional_key_ctrl"
+                style="@style/FunctionalKeyButton"
+                android:text="@string/special_keys_ctrl" />
+
+            <TextView
+                android:id="@+id/functional_key_alt"
+                style="@style/FunctionalKeyButton"
+                android:text="@string/special_keys_alt" />
+
+            <TextView
+                android:id="@+id/functional_key_esc"
+                style="@style/FunctionalKeyButton"
+                android:text="@string/special_keys_esc" />
+
+            <TextView
+                android:id="@+id/functional_key_tab"
+                style="@style/FunctionalKeyButton"
+                android:text="@string/special_keys_tab" />
+        </LinearLayout>
     </LinearLayout>
 </merge>

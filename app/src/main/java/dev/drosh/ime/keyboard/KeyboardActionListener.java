@@ -127,8 +127,8 @@ public interface KeyboardActionListener {
 
     /**
      * Sends a raw hardware key event, optionally with modifier bits set, straight to
-     * the editor. Used by the special keys layer for keys that have no soft key
-     * equivalent, such as Ctrl, Alt, Fn, Tab and the arrow keys.
+     * the editor. Used by the functional keys in the quickbar for keys that have no
+     * soft key equivalent, such as Ctrl, Alt, Esc and Tab.
      *
      * @param keyCode an android.view.KeyEvent key code
      * @param metaState a KeyEvent meta state mask, e.g. KeyEvent.META_CTRL_ON, or 0

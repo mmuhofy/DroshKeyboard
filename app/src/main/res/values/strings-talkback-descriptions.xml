@@ -90,8 +90,6 @@
     <string name="spoken_description_mode_clipboard">Clipboard mode</string>
     <!-- Spoken feedback after changing to the snippets keyboard. -->
     <string name="spoken_description_mode_snippets">Snippets mode</string>
-    <!-- Spoken feedback after changing to the special keys layer. -->
-    <string name="spoken_description_mode_special_keys">Special keys mode</string>
 
     <!-- Spoken feedback when the keyboard is hidden. -->
     <string name="announce_keyboard_hidden">Keyboard hidden</string>
