@@ -131,15 +131,21 @@ enum class ToolbarMode {
 
 val toolbarKeyStrings = entries.associateWithTo(EnumMap(ToolbarKey::class.java)) { it.toString().lowercase(Locale.US) }
 
+/** Keys pinned next to the suggestion strip by default. */
+private val defaultPinnedKeysEnabled = setOf(SNIPPETS, CLIPBOARD, VOICE)
+
 val defaultToolbarPref by lazy {
-    val default = listOf(SETTINGS, VOICE, CLIPBOARD, SNIPPETS, UNDO, REDO, SELECT_WORD, COPY, PASTE, LEFT, RIGHT)
+    // Arrows are intentionally not in the defaults: cursor movement comes from
+    // the space-hold pad (and the special keys row), not the quickbar.
+    val default = listOf(SETTINGS, VOICE, CLIPBOARD, SNIPPETS, UNDO, REDO, SELECT_WORD, COPY, PASTE)
     val others = entries.filterNot { it in default || it == CLOSE_HISTORY }
     default.joinToString(Separators.ENTRY) { it.name + Separators.KV + true } + Separators.ENTRY +
             others.joinToString(Separators.ENTRY) { it.name + Separators.KV + false }
 }
 
 val defaultPinnedToolbarPref = entries.filterNot { it == CLOSE_HISTORY }.joinToString(Separators.ENTRY) {
-    it.name + Separators.KV + false
+    val enabled = it in defaultPinnedKeysEnabled
+    it.name + Separators.KV + enabled
 }
 
 val defaultClipboardToolbarPref by lazy {

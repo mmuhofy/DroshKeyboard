@@ -765,7 +765,6 @@ public class LatinIME extends InputMethodService implements
     @Override
     public View onCreateInputView() {
         StatsUtils.onCreateInputView();
-        updateWindowBlur();
         return mKeyboardSwitcher.onCreateInputView(KtxKt.getDisplayContext(this), mIsHardwareAcceleratedDrawingEnabled);
     }
 
@@ -797,7 +796,6 @@ public class LatinIME extends InputMethodService implements
         mHandler.onStartInput(editorInfo, restarting);
         // Re-applied on every input start so a theme switch takes effect
         // without restarting the keyboard. Idempotent and cheap.
-        updateWindowBlur();
         updateGlassChrome();
     }
 
@@ -814,6 +812,8 @@ public class LatinIME extends InputMethodService implements
         mStatsUtilsManager.onFinishInputView();
         mGestureConsumer = GestureConsumer.NULL_GESTURE_CONSUMER;
         BackgroundGatheringCache.saveOrClear(this);
+        // never carry an armed modifier into the next input field
+        clearArmedModifier();
     }
 
     @Override
@@ -1436,6 +1436,8 @@ public class LatinIME extends InputMethodService implements
     // Implementation of {@link SuggestionStripView.Listener}.
     @Override
     public void onCodeInput(final int codePoint, final int x, final int y, final boolean isKeyRepeat) {
+        // any other quickbar/toolbar key consumes the sticky modifier
+        clearArmedModifier();
         mKeyboardActionListener.onCodeInput(codePoint, x, y, isKeyRepeat);
     }
 
@@ -1455,6 +1457,11 @@ public class LatinIME extends InputMethodService implements
 
     public void onTextInput(@Nullable String rawText) {
         if (rawText == null) return;
+        // A sticky modifier is armed: send this character as a real key event
+        // with the meta bits attached (Ctrl+C, Alt+B, ...) instead of plain
+        // text that the terminal would treat as an unmodified character.
+        if (rawText.length() == 1 && sendArmedMetaKey(rawText.charAt(0))) return;
+        clearArmedModifier();
         // TODO: have the keyboard pass the correct key code when we need it.
         Event event = Event.createSoftwareTextEvent(rawText, KeyCode.MULTIPLE_CODE_POINTS, null);
         InputTransaction completeInputTransaction = mInputLogic.onTextInput(mSettings.getCurrent(),
@@ -1830,33 +1837,6 @@ public class LatinIME extends InputMethodService implements
         p.println(mDictionaryFacilitator.dump(this));
     }
 
-    // slightly modified from Simple Keyboard: https://github.com/rkkr/simple-keyboard/blob/master/app/src/main/java/rkr/simplekeyboard/inputmethod/latin/LatinIME.java
-    /**
-     * Background blur behind the IME window, active only with the Drosh
-     * glass theme. The theme's own background color is translucent, so the
-     * blurred app content shows through around the opaque keys.
-     *
-     * Requires API 31+ for setBackgroundBlurRadius; below that the call is
-     * skipped and the theme simply renders as a dark surface. Turning blur
-     * off when another theme is selected restores the default opaque window.
-     */
-    private void updateWindowBlur() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return;
-        final Window window = getWindow().getWindow();
-        if (window == null) return;
-        if (dev.drosh.ime.keyboard.KeyboardTheme.isDroshGlassActive(this)) {
-            window.setBackgroundBlurRadius(80);
-            // The blur only shows through a translucent window. The input
-            // view itself already paints the translucent glass color, so the
-            // window behind it just needs to get out of the way.
-            window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(
-                    android.graphics.Color.TRANSPARENT));
-        } else {
-            window.setBackgroundBlurRadius(0);
-            window.setBackgroundDrawable(null);
-        }
-    }
-
     /**
      * Forwards a raw hardware key event from the functional keys to the editor.
      *
@@ -1865,6 +1845,50 @@ public class LatinIME extends InputMethodService implements
      */
     public void sendSpecialKeyEvent(final int keyCode, final int metaState) {
         mInputLogic.sendDownUpKeyEventWithMetaState(keyCode, metaState);
+    }
+
+    /**
+     * Sticky modifier armed from the special keys row of the quickbar. Set to a
+     * [KeyEvent] meta mask (e.g. `META_CTRL_ON`) while waiting for the next key
+     * press, `0` when idle. The next character goes out as a key event with
+     * these bits attached instead of plain text, so a terminal receives
+     * Ctrl+C, Ctrl+D, Alt+B, ... as proper control sequences.
+     */
+    private int mArmedMetaState = 0;
+
+    @Override
+    public void onArmSpecialMeta(final int metaState) {
+        mArmedMetaState = metaState;
+        if (mSuggestionStripView != null) {
+            mSuggestionStripView.setArmedModifier(metaState);
+        }
+    }
+
+    /** Clears the armed sticky modifier and its visual state. */
+    private void clearArmedModifier() {
+        if (mArmedMetaState == 0) return;
+        mArmedMetaState = 0;
+        if (mSuggestionStripView != null) {
+            mSuggestionStripView.setArmedModifier(0);
+        }
+    }
+
+    /**
+     * Sends a single character as a real key event when a sticky modifier is
+     * armed. Returns true when the character was consumed this way.
+     */
+    private boolean sendArmedMetaKey(final char c) {
+        if (mArmedMetaState == 0) return false;
+        if (Character.isHighSurrogate(c) || Character.isLowSurrogate(c)) return false;
+        final int keyCode = KeyCode.codePointToKeyEventCode(c);
+        if (keyCode == KeyEvent.KEYCODE_UNKNOWN) return false;
+        int metaState = mArmedMetaState;
+        if (Character.isUpperCase(c)) {
+            metaState |= KeyEvent.META_SHIFT_ON;
+        }
+        clearArmedModifier();
+        mInputLogic.sendDownUpKeyEventWithMetaState(keyCode, metaState);
+        return true;
     }
 
     /**

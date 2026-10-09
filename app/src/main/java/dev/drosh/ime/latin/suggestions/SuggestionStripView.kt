@@ -87,6 +87,13 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
          * editor. Used by the functional keys of the quickbar.
          */
         fun onSpecialKeyEvent(keyCode: Int, metaState: Int)
+        /**
+         * Arms a sticky modifier (e.g. [KeyEvent.META_CTRL_ON]) that applies to
+         * the next key press, or `0` to disarm. Used by Ctrl and Alt in the
+         * special keys row: a terminal needs the modifier attached to the key
+         * that follows it.
+         */
+        fun onArmSpecialMeta(metaState: Int)
     }
 
     private val moreSuggestionsContainer: View
@@ -127,6 +134,16 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val toolbarExpandKey = findViewById<ImageButton>(R.id.suggestions_strip_toolbar_key)
     private val functionalKeys: ViewGroup = findViewById(R.id.functional_keys)
     private var stripStage = STRIP_STAGE_SUGGESTIONS
+
+    // sticky modifier armed from the special keys row (KeyEvent meta mask)
+    private var armedMetaState = 0
+    private var functionalCtrlKey: TextView? = null
+    private var functionalAltKey: TextView? = null
+    private val armedKeyBackground = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = 6f * resources.displayMetrics.density
+        setColor(0x339E9E9E.toInt())
+    }
     private val incognitoIcon = KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.INCOGNITO.name, context)
     private val toolbarArrowIcon = KeyboardIconsSet.instance.getNewDrawable(KeyboardIconsSet.NAME_TOOLBAR_KEY, context)
     private val defaultToolbarBackground: Drawable = toolbarExpandKey.background
@@ -236,9 +253,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     /**
-     * The quickbar cycles through three stages when the expand key is pressed:
-     * the pinned keys, the full toolbar, and the functional keys. Callers that
-     * only care about showing or hiding the toolbar keep using this.
+     * The quickbar has two stages, toggled by the expand key:
+     * the pinned keys (together with the always-visible special keys row) and
+     * the full toolbar. Callers that only care about showing or hiding the
+     * toolbar keep using this.
      */
     fun setToolbarVisibility(toolbarVisible: Boolean) {
         setStripStage(if (toolbarVisible) STRIP_STAGE_TOOLBAR else STRIP_STAGE_SUGGESTIONS)
@@ -247,11 +265,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private fun setStripStage(stage: Int) {
         stripStage = stage
         val toolbarVisible = stage == STRIP_STAGE_TOOLBAR
-        val functionalVisible = stage == STRIP_STAGE_FUNCTIONAL
         pinnedKeys.isVisible = stage == STRIP_STAGE_SUGGESTIONS
         suggestionsStrip.isVisible = stage == STRIP_STAGE_SUGGESTIONS
         toolbarContainer.isVisible = toolbarVisible
-        functionalKeys.isVisible = functionalVisible
+        functionalKeys.isVisible = stage == STRIP_STAGE_SUGGESTIONS
 
         if (DEBUG_SUGGESTIONS) {
             for (view in debugInfoViews) {
@@ -262,14 +279,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         toolbarExpandKey.scaleX = (if (toolbarVisible) -1f else 1f) * direction
     }
 
-    /** Advances to the next quickbar stage, wrapping around after the last one. */
+    /** Switches between pinned keys and the full toolbar. */
     private fun advanceStripStage() {
         setStripStage(
-            when (stripStage) {
-                STRIP_STAGE_SUGGESTIONS -> STRIP_STAGE_TOOLBAR
-                STRIP_STAGE_TOOLBAR -> STRIP_STAGE_FUNCTIONAL
-                else -> STRIP_STAGE_SUGGESTIONS
-            }
+            if (stripStage == STRIP_STAGE_TOOLBAR) STRIP_STAGE_SUGGESTIONS else STRIP_STAGE_TOOLBAR
         )
     }
 
@@ -540,22 +553,68 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     /**
-     * Binds the functional keys of the third quickbar stage. They send real key
-     * events because Ctrl, Alt, Esc and Tab have no soft key equivalent, and a
-     * terminal needs them with the meta bits still attached.
+     * Binds the special keys row. Esc and Tab send real key events, because
+     * they have no soft key equivalent. Ctrl and Alt arm a *sticky* modifier
+     * that attaches to the next key press: a terminal needs the meta bits on
+     * the key that follows, so `Ctrl` + `c` arrives as a single Ctrl+C key
+     * event instead of a bare modifier tap the shell ignores.
      */
     private fun setupFunctionalKeys() {
-        fun bind(id: Int, keyCode: Int, metaState: Int) {
-            findViewById<View>(id)?.setOnClickListener {
-                AudioAndHapticFeedbackManager.getInstance()
-                    .performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, it, HapticEvent.KEY_PRESS)
-                listener.onSpecialKeyEvent(keyCode, metaState)
-            }
+        functionalCtrlKey = findViewById(R.id.functional_key_ctrl)
+        functionalAltKey = findViewById(R.id.functional_key_alt)
+        bindOneShot(R.id.functional_key_esc, KeyEvent.KEYCODE_ESCAPE, 0)
+        bindOneShot(R.id.functional_key_tab, KeyEvent.KEYCODE_TAB, 0)
+        bindSticky(functionalCtrlKey, KeyEvent.META_CTRL_ON)
+        bindSticky(functionalAltKey, KeyEvent.META_ALT_ON)
+    }
+
+    private fun bindOneShot(id: Int, keyCode: Int, metaState: Int) {
+        findViewById<View>(id)?.setOnClickListener { view ->
+            performKeyFeedback(view)
+            disarmModifier()
+            listener.onSpecialKeyEvent(keyCode, metaState)
         }
-        bind(R.id.functional_key_ctrl, KeyEvent.KEYCODE_CTRL_LEFT, KeyEvent.META_CTRL_ON)
-        bind(R.id.functional_key_alt, KeyEvent.KEYCODE_ALT_LEFT, KeyEvent.META_ALT_ON)
-        bind(R.id.functional_key_esc, KeyEvent.KEYCODE_ESCAPE, 0)
-        bind(R.id.functional_key_tab, KeyEvent.KEYCODE_TAB, 0)
+    }
+
+    private fun bindSticky(view: View?, metaState: Int) {
+        view?.setOnClickListener {
+            performKeyFeedback(it)
+            armedMetaState = if (armedMetaState == metaState) 0 else metaState
+            refreshArmedKeyVisual()
+            listener.onArmSpecialMeta(armedMetaState)
+        }
+    }
+
+    private fun performKeyFeedback(view: View) {
+        AudioAndHapticFeedbackManager.getInstance()
+            .performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, view, HapticEvent.KEY_PRESS)
+    }
+
+    /** Clears the sticky modifier, e.g. when Esc or Tab is pressed instead. */
+    private fun disarmModifier() {
+        if (armedMetaState == 0) return
+        armedMetaState = 0
+        refreshArmedKeyVisual()
+        listener.onArmSpecialMeta(0)
+    }
+
+    /**
+     * Mirrors the armed sticky modifier coming from the IME, which clears it
+     * once the next key press was sent with the meta bits attached.
+     */
+    fun setArmedModifier(metaState: Int) {
+        if (armedMetaState == metaState) return
+        armedMetaState = metaState
+        refreshArmedKeyVisual()
+    }
+
+    private fun refreshArmedKeyVisual() {
+        functionalCtrlKey?.setArmedVisual(armedMetaState == KeyEvent.META_CTRL_ON)
+        functionalAltKey?.setArmedVisual(armedMetaState == KeyEvent.META_ALT_ON)
+    }
+
+    private fun View.setArmedVisual(armed: Boolean) {
+        background = if (armed) armedKeyBackground else null
     }
 
     private fun updateKeys() {
@@ -602,12 +661,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     companion object {
-        /** Quickbar shows the pinned keys next to the suggestions. */
+        /** Quickbar shows the pinned keys (and the special keys row) next to the suggestions. */
         private const val STRIP_STAGE_SUGGESTIONS = 0
         /** Quickbar shows the full toolbar. */
         private const val STRIP_STAGE_TOOLBAR = 1
-        /** Quickbar shows the functional keys. */
-        private const val STRIP_STAGE_FUNCTIONAL = 2
 
         @JvmField
         var DEBUG_SUGGESTIONS = false
