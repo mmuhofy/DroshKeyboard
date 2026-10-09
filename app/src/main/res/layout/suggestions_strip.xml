@@ -63,9 +63,9 @@
             android:minWidth="0dp"
             style="?attr/suggestionWordStyle">
         </LinearLayout>
-        <!-- Special keys row: always visible in the suggestions stage, so the
-             terminal keys are a single tap away instead of hidden behind the
-             expand key. Holds the keys that have no soft key equivalent. -->
+        <!-- Third stage of the quickbar: shown when the expand key is pressed
+             a second time (quickbar first, special keys second). Holds the keys
+             that have no soft key equivalent and are needed on a terminal. -->
         <LinearLayout
             android:id="@+id/functional_keys"
             android:orientation="horizontal"
@@ -73,7 +73,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center_vertical"
-            android:visibility="visible"
+            android:visibility="gone"
             style="?attr/suggestionWordStyle">
 
             <TextView

@@ -1876,16 +1876,17 @@ public class LatinIME extends InputMethodService implements
     /**
      * Sends a single character as a real key event when a sticky modifier is
      * armed. Returns true when the character was consumed this way.
+     *
+     * The shift bit is deliberately not attached even for uppercase letters:
+     * control sequences are case-insensitive (Ctrl+C == Ctrl+c), and a stray
+     * shift bit makes the terminal-side translation device-dependent.
      */
     private boolean sendArmedMetaKey(final char c) {
         if (mArmedMetaState == 0) return false;
         if (Character.isHighSurrogate(c) || Character.isLowSurrogate(c)) return false;
         final int keyCode = KeyCode.codePointToKeyEventCode(c);
         if (keyCode == KeyEvent.KEYCODE_UNKNOWN) return false;
-        int metaState = mArmedMetaState;
-        if (Character.isUpperCase(c)) {
-            metaState |= KeyEvent.META_SHIFT_ON;
-        }
+        final int metaState = mArmedMetaState; // captured before clearing
         clearArmedModifier();
         mInputLogic.sendDownUpKeyEventWithMetaState(keyCode, metaState);
         return true;

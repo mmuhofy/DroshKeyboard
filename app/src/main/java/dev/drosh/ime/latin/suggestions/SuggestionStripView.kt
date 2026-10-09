@@ -253,9 +253,9 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     /**
-     * The quickbar has two stages, toggled by the expand key:
-     * the pinned keys (together with the always-visible special keys row) and
-     * the full toolbar. Callers that only care about showing or hiding the
+     * The quickbar cycles through three stages when the expand key is pressed:
+     * the pinned keys, the full toolbar (quickbar mode), and the special keys
+     * (Ctrl/Alt/Esc/Tab). Callers that only care about showing or hiding the
      * toolbar keep using this.
      */
     fun setToolbarVisibility(toolbarVisible: Boolean) {
@@ -265,10 +265,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private fun setStripStage(stage: Int) {
         stripStage = stage
         val toolbarVisible = stage == STRIP_STAGE_TOOLBAR
+        val functionalVisible = stage == STRIP_STAGE_FUNCTIONAL
         pinnedKeys.isVisible = stage == STRIP_STAGE_SUGGESTIONS
         suggestionsStrip.isVisible = stage == STRIP_STAGE_SUGGESTIONS
         toolbarContainer.isVisible = toolbarVisible
-        functionalKeys.isVisible = stage == STRIP_STAGE_SUGGESTIONS
+        functionalKeys.isVisible = functionalVisible
 
         if (DEBUG_SUGGESTIONS) {
             for (view in debugInfoViews) {
@@ -279,10 +280,14 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         toolbarExpandKey.scaleX = (if (toolbarVisible) -1f else 1f) * direction
     }
 
-    /** Switches between pinned keys and the full toolbar. */
+    /** Advances to the next quickbar stage, wrapping around after the last one. */
     private fun advanceStripStage() {
         setStripStage(
-            if (stripStage == STRIP_STAGE_TOOLBAR) STRIP_STAGE_SUGGESTIONS else STRIP_STAGE_TOOLBAR
+            when (stripStage) {
+                STRIP_STAGE_SUGGESTIONS -> STRIP_STAGE_TOOLBAR
+                STRIP_STAGE_TOOLBAR -> STRIP_STAGE_FUNCTIONAL
+                else -> STRIP_STAGE_SUGGESTIONS
+            }
         )
     }
 
@@ -661,10 +666,12 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     companion object {
-        /** Quickbar shows the pinned keys (and the special keys row) next to the suggestions. */
+        /** Quickbar shows the pinned keys next to the suggestions. */
         private const val STRIP_STAGE_SUGGESTIONS = 0
         /** Quickbar shows the full toolbar. */
         private const val STRIP_STAGE_TOOLBAR = 1
+        /** Quickbar shows the special keys (Ctrl, Alt, Esc, Tab). */
+        private const val STRIP_STAGE_FUNCTIONAL = 2
 
         @JvmField
         var DEBUG_SUGGESTIONS = false
