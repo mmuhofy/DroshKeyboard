@@ -36,6 +36,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
         fun setEmojiKeyboard()
         fun setClipboardKeyboard()
         fun setSnippetsKeyboard()
+        fun setMouseKeyboard()
         fun setNumpadKeyboard()
         fun setDpadKeyboard()
         fun setSymbolsKeyboard()
