@@ -89,7 +89,6 @@
                 android:gravity="center"
                 android:background="@drawable/special_key_background"
                 android:textAllCaps="false"
-                android:textStyle="bold"
                 android:letterSpacing="0.04"
                 android:clickable="true"
                 android:focusable="true" />
@@ -106,7 +105,6 @@
                 android:gravity="center"
                 android:background="@drawable/special_key_background"
                 android:textAllCaps="false"
-                android:textStyle="bold"
                 android:letterSpacing="0.04"
                 android:clickable="true"
                 android:focusable="true" />
@@ -123,7 +121,6 @@
                 android:gravity="center"
                 android:background="@drawable/special_key_background"
                 android:textAllCaps="false"
-                android:textStyle="bold"
                 android:letterSpacing="0.04"
                 android:clickable="true"
                 android:focusable="true" />
@@ -140,7 +137,6 @@
                 android:gravity="center"
                 android:background="@drawable/special_key_background"
                 android:textAllCaps="false"
-                android:textStyle="bold"
                 android:letterSpacing="0.04"
                 android:clickable="true"
                 android:focusable="true" />

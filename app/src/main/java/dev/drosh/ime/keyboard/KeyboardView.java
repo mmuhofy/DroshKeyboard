@@ -463,7 +463,8 @@ public class KeyboardView extends View {
             paint.setTextSize(key.selectHintTextSize(params) * mHintFontSizeMultiplier);
             paint.setColor(key.selectHintTextColor(params));
             // TODO: Should add a way to specify type face for hint letters
-            paint.setTypeface(KeyboardTypeface.resolve(hintLabel, Typeface.DEFAULT_BOLD));
+            paint.setTypeface(KeyboardTypeface.resolve(hintLabel,
+                    Typeface.create("sans-serif-light", Typeface.NORMAL)));
             blendAlpha(paint, params.mAnimAlpha);
             final float labelCharHeight = TypefaceUtils.getReferenceCharHeight(paint);
             final float labelCharWidth = TypefaceUtils.getReferenceCharWidth(paint);

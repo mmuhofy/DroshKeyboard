@@ -67,10 +67,23 @@ public final class KeyVisualAttributes {
     private static final SparseIntArray sVisualAttributeIds = new SparseIntArray();
     private static final int ATTR_DEFINED = 1;
     private static final int ATTR_NOT_FOUND = 0;
+    private static final String KEY_FONT_FAMILY = "sans-serif-light";
     static {
         for (final int attrId : VISUAL_ATTRIBUTE_IDS) {
             sVisualAttributeIds.put(attrId, ATTR_DEFINED);
         }
+    }
+
+    /**
+     * Key labels use a light system sans (Roboto Light family) instead of the
+     * platform default weight: the Drosh look is thin and modern. Styles that
+     * explicitly ask for bold/italic keep their weight, just on the light
+     * family. Falls back to the platform typeface when the family is missing.
+     */
+    @NonNull
+    private static Typeface resolveKeyTypeface(final int style) {
+        final Typeface light = Typeface.create(KEY_FONT_FAMILY, style);
+        return light != null ? light : Typeface.defaultFromStyle(style);
     }
 
     @Nullable
@@ -88,7 +101,7 @@ public final class KeyVisualAttributes {
 
     private KeyVisualAttributes(@NonNull final TypedArray keyAttr) {
         if (keyAttr.hasValue(R.styleable.Keyboard_Key_keyTypeface)) {
-            mTypeface = Typeface.defaultFromStyle(
+            mTypeface = resolveKeyTypeface(
                     keyAttr.getInt(R.styleable.Keyboard_Key_keyTypeface, Typeface.NORMAL));
         } else {
             mTypeface = null;

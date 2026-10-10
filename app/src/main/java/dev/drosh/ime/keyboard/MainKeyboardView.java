@@ -822,7 +822,8 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         }
         else
             spaceText = layoutLanguageOnSpacebar(paint, keyboard.mId.getSubtype(), width);
-        paint.setTypeface(KeyboardTypeface.resolve(spaceText, Typeface.DEFAULT));
+        paint.setTypeface(KeyboardTypeface.resolve(spaceText,
+                Typeface.create("sans-serif-light", Typeface.NORMAL)));
         // Draw language text with shadow
         final float descent = paint.descent();
         final float textHeight = -paint.ascent() + descent;

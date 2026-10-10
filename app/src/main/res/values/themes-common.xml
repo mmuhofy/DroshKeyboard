@@ -103,6 +103,9 @@
         <item name="android:paddingTop">0dp</item>
         <item name="android:paddingRight">@dimen/config_suggestion_text_horizontal_padding</item>
         <item name="android:paddingBottom">0dp</item>
+        <!-- thin, modern weight for strip text (suggestions, special keys) -->
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:textStyle">normal</item>
         <!-- Provide audio and haptic feedback by ourselves based on the keyboard settings.
              We just need to ignore the system's audio and haptic feedback settings. -->
         <item name="android:hapticFeedbackEnabled">false</item>
