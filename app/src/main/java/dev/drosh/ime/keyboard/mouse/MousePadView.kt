@@ -72,12 +72,13 @@ class MousePadView @JvmOverloads constructor(
 
     fun startMouse(actionListener: KeyboardActionListener) {
         keyboardActionListener = actionListener
-        resetState()
         findViewById<ImageButton>(R.id.mouse_pad_close).setOnClickListener { close() }
         surface = findViewById(R.id.mouse_pad_surface)
         haptic = findViewById(R.id.mouse_pad_haptic)
         surface.isHapticFeedbackEnabled = false
         surface.setOnTouchListener { _, event -> onSurfaceTouch(event); true }
+        // reset only after the views exist: resetState touches the surface
+        resetState()
         started = true
         send(MouseProtocol.OP_OPEN)
     }
@@ -136,6 +137,7 @@ class MousePadView @JvmOverloads constructor(
     }
 
     private fun setArmed(armed: Boolean) {
+        if (!::surface.isInitialized) return
         surface.setBackgroundResource(
             if (armed) R.drawable.mouse_pad_surface_armed else R.drawable.mouse_pad_surface
         )
