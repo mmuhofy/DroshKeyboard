@@ -172,6 +172,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
             Utility.EMOJI -> switchActions.setEmojiKeyboard()
             Utility.CLIPBOARD -> switchActions.setClipboardKeyboard()
             Utility.SNIPPETS -> switchActions.setSnippetsKeyboard()
+            Utility.MOUSE -> switchActions.setMouseKeyboard()
             Utility.NUMPAD -> switchActions.setNumpadKeyboard()
             Utility.DPAD -> switchActions.setDpadKeyboard()
         }
