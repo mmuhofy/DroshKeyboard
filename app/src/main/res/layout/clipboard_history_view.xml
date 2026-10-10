@@ -11,28 +11,42 @@
     android:orientation="vertical"
     android:visibility="gone"
     android:background="@android:color/transparent"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:paddingBottom="10dp"
     style="?attr/clipboardHistoryViewStyle">
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/panel_background"
+        android:padding="8dp">
 
-        <TextView
-            android:id="@+id/clipboard_empty_view"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="invisible"
-            android:text="¯\\_(ツ)_/¯"
-            tools:ignore="HardcodedText" />
-
-        <dev.drosh.ime.keyboard.clipboard.ClipboardHistoryRecyclerView
-            android:id="@+id/clipboard_list"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"/>
+            android:layout_height="wrap_content">
 
-    </FrameLayout>
+            <TextView
+                android:id="@+id/clipboard_empty_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="24dp"
+                android:gravity="center"
+                android:textColor="#AEB4C0"
+                android:visibility="invisible"
+                android:text="¯\\_(ツ)_/¯"
+                tools:ignore="HardcodedText" />
+
+            <dev.drosh.ime.keyboard.clipboard.ClipboardHistoryRecyclerView
+                android:id="@+id/clipboard_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </FrameLayout>
+    </LinearLayout>
 
     <dev.drosh.ime.keyboard.MainKeyboardView
         android:id="@+id/bottom_row_keyboard"

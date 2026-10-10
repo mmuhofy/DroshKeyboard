@@ -34,8 +34,8 @@ import dev.drosh.ime.latin.common.Constants
  * - short tap                 → left click
  * - two-finger single tap     → right click
  *
- * While a finger is down the pad reports a move every [MOVE_COALESCE_MS],
- * even with a zero delta: that is the keep-alive the app uses to keep
+ * Deltas are reported once per touch sample (the prototype's cadence), plus
+ * a 32ms keep-alive while a finger is down, which is what lets the app keep
  * auto-scrolling when the pointer is pushed against the top or bottom edge
  * and held there.
  *
@@ -64,7 +64,6 @@ class MousePadView @JvmOverloads constructor(
     private var lastY = 0f
     private var activePointerId = -1
     private var secondPointerId = -1
-    private var lastMoveSent = 0L
 
     fun setKeyboardActionListener(listener: KeyboardActionListener) {
         keyboardActionListener = listener
@@ -205,24 +204,20 @@ class MousePadView @JvmOverloads constructor(
     }
 
     /**
-     * Reports the accumulated deltas at most every [MOVE_COALESCE_MS], so a
-     * fast drag does not flood the binder. A periodic flusher keeps reporting
-     * while a finger is down even when it stops moving: that is what tells
-     * the app the pad is still held against the edge (auto-scroll).
-     */
-    private fun startMoveFlusher() {
+     * Keeps reporting while a finger is down even when it stops moving
+     * (zero-delta keep-alive): that is what tells the app the pad is still
+     * held against the edge, so auto-scroll keeps flowing.
+     */    private fun startMoveFlusher() {
         stopMoveFlusher()
         val flusher = object : Runnable {
             override fun run() {
                 if (!padHold) return
-                // forced: a zero-delta report is the keep-alive that tells the
-                // app the pad is still held against the edge
-                flushMove(force = true)
-                mainHandler.postDelayed(this, MOVE_COALESCE_MS)
+                send(MouseProtocol.OP_MOVE, dx = 0, dy = 0)
+                mainHandler.postDelayed(this, KEEP_ALIVE_MS)
             }
         }
         moveFlusher = flusher
-        mainHandler.postDelayed(flusher, MOVE_COALESCE_MS)
+        mainHandler.postDelayed(flusher, KEEP_ALIVE_MS)
     }
 
     private fun stopMoveFlusher() {
@@ -230,12 +225,13 @@ class MousePadView @JvmOverloads constructor(
         moveFlusher = null
     }
 
-    private fun flushMove(force: Boolean = false) {
-        if (!force) {
-            if (accX == 0 && accY == 0) return
-            if (SystemClock.elapsedRealtime() - lastMoveSent < MOVE_COALESCE_MS) return
-        }
-        lastMoveSent = SystemClock.elapsedRealtime()
+    /**
+     * Reports the accumulated deltas immediately — the prototype's cadence,
+     * one report per touch sample, which is what makes the movement feel
+     * like a real pointer.
+     */
+    private fun flushMove() {
+        if (accX == 0 && accY == 0) return
         send(MouseProtocol.OP_MOVE, dx = accX, dy = accY)
         accX = 0
         accY = 0
@@ -244,6 +240,6 @@ class MousePadView @JvmOverloads constructor(
     private companion object {
         const val TAP_MS = 260L
         const val TAP_PX = 12
-        const val MOVE_COALESCE_MS = 32L
+        const val KEEP_ALIVE_MS = 32L
     }
 }

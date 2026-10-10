@@ -7,11 +7,14 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:minHeight="56dp"
-    android:paddingStart="12dp"
+    android:minHeight="60dp"
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="3dp"
+    android:paddingStart="14dp"
     android:paddingEnd="4dp"
-    android:paddingTop="6dp"
-    android:paddingBottom="6dp">
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:background="@drawable/panel_row_background">
 
     <LinearLayout
         android:layout_width="0dp"
@@ -25,31 +28,40 @@
             android:layout_height="wrap_content"
             android:fontFamily="monospace"
             android:textStyle="bold"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
+            android:textColor="#B2C8FF"
+            android:textSize="13sp"
+            android:letterSpacing="0.04" />
 
         <TextView
             android:id="@+id/snippet_command"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="monospace"
-            android:singleLine="true"
+            android:maxLines="2"
             android:ellipsize="end"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
+            android:textColor="#AEB4C0"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <ImageButton
         android:id="@+id/snippet_edit"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/circle_button_background"
         android:contentDescription="@string/snippet_edit_title"
-        android:src="@drawable/ic_edit" />
+        android:padding="10dp"
+        android:src="@drawable/ic_edit"
+        android:tint="#E6E6EE" />
 
     <ImageButton
         android:id="@+id/snippet_delete"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:background="@drawable/circle_button_background"
         android:contentDescription="@string/snippet_delete_title"
-        android:src="@drawable/ic_bin" />
+        android:padding="10dp"
+        android:src="@drawable/ic_bin"
+        android:tint="#E6E6EE" />
 </LinearLayout>
