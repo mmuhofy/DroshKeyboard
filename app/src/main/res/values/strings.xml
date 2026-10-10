@@ -76,6 +76,21 @@
     <string name="snippets">Snippets</string>
     <!-- Empty state of the snippet list -->
     <string name="snippets_empty">No snippets yet. Add one with the + button, or define them in ~/.drosh/snippets.json as {"alias": "command"}.</string>
+    <!-- Empty state when Drosh could not be reached; parameter is the failure reason -->
+    <string name="snippets_empty_error">Can\'t reach Drosh: %1$s\nIs Drosh installed and signed with the same key?</string>
+    <!-- Write failure; parameter is the failure reason -->
+    <string name="snippet_write_failed">Could not save the snippet: %1$s</string>
+    <!-- About-screen connection test -->
+    <string name="drosh_connection">Drosh connection test</string>
+    <string name="drosh_connection_summary">Checks whether this keyboard can reach the Drosh terminal app</string>
+    <!-- Connection test results -->
+    <string name="drosh_connection_title">Drosh connection test</string>
+    <string name="drosh_connection_testing">Testing…</string>
+    <string name="drosh_connection_snippets_ok">Snippets provider: reachable — %1$d snippet(s)</string>
+    <string name="drosh_connection_snippets_failed">Snippets provider: FAILED — %1$s</string>
+    <string name="drosh_connection_command_ok">Command state provider: reachable — %1$s</string>
+    <string name="drosh_connection_command_failed">Command state provider: FAILED — %1$s</string>
+    <string name="drosh_connection_command_empty">Command state provider: reachable, but Drosh has published no state yet (is a session open?)</string>
     <!-- Dialog title when adding a snippet -->
     <string name="snippet_add_title">Add snippet</string>
     <!-- Dialog title when editing a snippet -->

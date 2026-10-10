@@ -11,6 +11,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import dev.drosh.ime.keyboard.KeyboardSwitcher
 import dev.drosh.ime.latin.R
 import dev.drosh.ime.state.DroshStateClient
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -99,6 +100,17 @@ class SnippetsView @JvmOverloads constructor(
                 val empty = items.isEmpty()
                 emptyView.visibility = if (empty) View.VISIBLE else View.GONE
                 list.visibility = if (empty) View.GONE else View.VISIBLE
+                if (empty) {
+                    // Distinguish "no snippets yet" from "Drosh unreachable":
+                    // an IME must not depend on another app, but a silent empty
+                    // panel leaves the user guessing.
+                    val error = client.lastError
+                    emptyView.text = if (error != null) {
+                        context.getString(R.string.snippets_empty_error, error)
+                    } else {
+                        context.getString(R.string.snippets_empty)
+                    }
+                }
             }
         }.start()
     }
@@ -135,7 +147,17 @@ class SnippetsView @JvmOverloads constructor(
                         } else {
                             client.updateSnippet(alias, command)
                         }
-                        if (ok) post { refresh() }
+                        post {
+                            if (ok) {
+                                refresh()
+                            } else {
+                                // explain instead of silently doing nothing
+                                toast(context.getString(
+                                    R.string.snippet_write_failed,
+                                    client.lastError.orEmpty(),
+                                ))
+                            }
+                        }
                     }.start()
                 }
                 .setNegativeButton(R.string.snippet_cancel, null),
@@ -149,11 +171,25 @@ class SnippetsView @JvmOverloads constructor(
                 .setMessage(snippet.alias)
                 .setPositiveButton(R.string.snippet_delete) { _, _ ->
                     Thread {
-                        if (client.deleteSnippet(snippet.alias)) post { refresh() }
+                        val ok = client.deleteSnippet(snippet.alias)
+                        post {
+                            if (ok) {
+                                refresh()
+                            } else {
+                                toast(context.getString(
+                                    R.string.snippet_write_failed,
+                                    client.lastError.orEmpty(),
+                                ))
+                            }
+                        }
                     }.start()
                 }
                 .setNegativeButton(R.string.snippet_cancel, null),
         )
+    }
+
+    private fun toast(message: String) {
+        KeyboardSwitcher.getInstance().showToast(message, true)
     }
 
     /**

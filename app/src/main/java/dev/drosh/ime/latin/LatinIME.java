@@ -801,6 +801,31 @@ public class LatinIME extends InputMethodService implements
     public void onStartInputView(final EditorInfo editorInfo, final boolean restarting) {
         mHandler.onStartInputView(editorInfo, restarting);
         mStatsUtilsManager.onStartInputView();
+        // Tell Drosh where this keyboard sits, so it only reserves space for
+        // a docked keyboard. Re-announced on every input session because the
+        // floating flag can change between them.
+        announceWindowModeToDrosh();
+    }
+
+    /**
+     * Broadcasts the docked/floating state to the Drosh terminal app.
+     *
+     * Explicit package target and a signature-level permission on the
+     * receiving side: only the Drosh Keyboard build can speak to Drosh this
+     * way, and no other app hears it. Drosh being absent is fine — the
+     * broadcast is fire-and-forget.
+     */
+    private void announceWindowModeToDrosh() {
+        final boolean floating = Settings.getValues().mIsFloatingKeyboard;
+        final android.content.Intent intent = new android.content.Intent(
+                "dev.drosh.action.KEYBOARD_WINDOW_MODE");
+        intent.setPackage("dev.drosh");
+        intent.putExtra("mode", floating ? "floating" : "fixed");
+        try {
+            sendBroadcast(intent);
+        } catch (Exception e) {
+            Log.w(TAG, "window mode broadcast failed: " + e.getMessage());
+        }
     }
 
     @Override

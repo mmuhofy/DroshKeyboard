@@ -16,6 +16,8 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
     <!-- Read Drosh terminal state and snippets. Signature-level: only a
          same-signed Drosh build can serve this, which is exactly our setup. -->
     <uses-permission android:name="dev.drosh.permission.READ_COMMAND_STATE" />
+    <!-- Tell Drosh whether this keyboard is docked or floating. -->
+    <uses-permission android:name="dev.drosh.permission.SEND_KEYBOARD_MODE" />
 
     <application android:label="@string/english_ime_name"
             android:name="dev.drosh.ime.latin.App"
@@ -147,5 +149,12 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+
+        <!-- Drosh's command-state / snippet provider. The MAIN/LAUNCHER query
+             above already makes dev.drosh visible (it launches), but naming
+             the provider authority directly documents the dependency and
+             keeps working if the launcher entry ever moves. -->
+        <provider android:authorities="dev.drosh.state" />
+        <package android:name="dev.drosh" />
     </queries>
 </manifest>

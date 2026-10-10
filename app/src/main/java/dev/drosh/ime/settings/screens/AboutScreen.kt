@@ -45,7 +45,18 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import androidx.core.content.edit
 import dev.drosh.ime.latin.utils.IntentUtils
+import dev.drosh.ime.state.DroshStateClient
 import java.util.Locale
+import kotlinx.coroutines.withContext
+
+/** Compact rendering of the provider's one-row command state. */
+private fun formatCommandState(state: Map<String, String>): String {
+    val status = state["status"].orEmpty()
+    val command = state["command"].orEmpty().ifBlank { "-" }
+    val cwd = state["cwd"].orEmpty().ifBlank { "-" }
+    val exit = state["exit_code"].orEmpty()
+    return "status=$status, exit=$exit, cwd=$cwd, command=$command"
+}
 
 @Composable
 fun AboutScreen(
@@ -55,6 +66,7 @@ fun AboutScreen(
         SettingsWithoutKey.APP,
         SettingsWithoutKey.VERSION,
         SettingsWithoutKey.LICENSE,
+        SettingsWithoutKey.DROSH_CONNECTION,
         SettingsWithoutKey.HIDDEN_FEATURES,
         SettingsWithoutKey.GITHUB_WIKI,
         SettingsWithoutKey.COMMUNITY_LINKS,
@@ -107,6 +119,46 @@ fun createAboutSettings(context: Context) = listOf(
                 ctx.startActivity(intent)
             },
             icon = R.drawable.ic_settings_about_license
+        )
+    },
+    Setting(context, SettingsWithoutKey.DROSH_CONNECTION, R.string.drosh_connection, R.string.drosh_connection_summary) {
+        val ctx = LocalContext.current
+        val scope = rememberCoroutineScope()
+        Preference(
+            name = it.title,
+            description = it.description,
+            onClick = {
+                val client = DroshStateClient(ctx)
+                scope.launch(Dispatchers.IO) {
+                    val snippets = client.querySnippets()
+                    val snippetError = client.lastError
+                    val command = client.queryCommand()
+                    val commandError = client.lastError
+                    val snippetLine =
+                        snippetError?.let { err -> ctx.getString(R.string.drosh_connection_snippets_failed, err) }
+                            ?: ctx.getString(R.string.drosh_connection_snippets_ok, snippets.size)
+                    val commandLine = when {
+                        commandError != null -> ctx.getString(
+                            R.string.drosh_connection_command_failed,
+                            commandError,
+                        )
+                        command == null -> ctx.getString(
+                            R.string.drosh_connection_command_failed,
+                            "unknown error",
+                        )
+                        command.isEmpty() -> ctx.getString(R.string.drosh_connection_command_empty)
+                        else -> ctx.getString(R.string.drosh_connection_command_ok, formatCommandState(command))
+                    }
+                    withContext(Dispatchers.Main) {
+                        AlertDialog.Builder(ctx)
+                            .setTitle(R.string.drosh_connection_title)
+                            .setMessage("$snippetLine\n$commandLine")
+                            .setPositiveButton(R.string.dialog_close, null)
+                            .show()
+                    }
+                }
+            },
+            icon = R.drawable.sym_keyboard_snippets_rounded
         )
     },
     Setting(context, SettingsWithoutKey.HIDDEN_FEATURES, R.string.hidden_features_title, R.string.hidden_features_summary) {
