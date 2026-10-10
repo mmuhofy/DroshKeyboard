@@ -13,6 +13,7 @@ import android.util.SparseIntArray;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import dev.drosh.ime.keyboard.KeyboardTypeface;
 import dev.drosh.ime.latin.R;
 import dev.drosh.ime.latin.common.ColorType;
 import dev.drosh.ime.latin.common.Colors;
@@ -75,13 +76,17 @@ public final class KeyVisualAttributes {
     }
 
     /**
-     * Key labels use a light system sans (Roboto Light family) instead of the
-     * platform default weight: the Drosh look is thin and modern. Styles that
-     * explicitly ask for bold/italic keep their weight, just on the light
-     * family. Falls back to the platform typeface when the family is missing.
+     * Key labels use the bundled Inter font — thin and modern, unlike the
+     * platform default sans. Styles that explicitly ask for bold/italic keep
+     * their weight. Falls back to the light system sans, then the platform
+     * typeface when Inter cannot be loaded.
      */
     @NonNull
     private static Typeface resolveKeyTypeface(final int style) {
+        final Typeface inter = KeyboardTypeface.interTypeface();
+        if (inter != null) {
+            return Typeface.create(inter, style);
+        }
         final Typeface light = Typeface.create(KEY_FONT_FAMILY, style);
         return light != null ? light : Typeface.defaultFromStyle(style);
     }

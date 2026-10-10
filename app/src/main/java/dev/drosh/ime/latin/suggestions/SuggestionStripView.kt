@@ -32,6 +32,7 @@ import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import dev.drosh.ime.event.HapticEvent
 import dev.drosh.ime.keyboard.KeyboardSwitcher
+import dev.drosh.ime.keyboard.KeyboardTypeface
 import dev.drosh.ime.keyboard.internal.KeyboardIconsSet
 import dev.drosh.ime.keyboard.internal.keyboard_parser.floris.KeyCode
 import dev.drosh.ime.latin.AudioAndHapticFeedbackManager
@@ -121,6 +122,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             word.setOnClickListener(this)
             word.setOnLongClickListener(this)
             colors.setBackground(word, ColorType.STRIP_BACKGROUND)
+            KeyboardTypeface.applyToTextView(word)
             wordViews.add(word)
             val divider = inflater.inflate(R.layout.suggestion_divider, null)
             dividerViews.add(divider)
@@ -150,7 +152,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         androidx.core.content.ContextCompat.getDrawable(context, R.drawable.special_key_background)
     private val armedKeyBackground = GradientDrawable().apply {
         shape = GradientDrawable.RECTANGLE
-        cornerRadius = 9f * resources.displayMetrics.density
+        cornerRadius = 50f * resources.displayMetrics.density // pill, matches the chip
         setColor(0xF2B2C8FF.toInt()) // Drosh accent, 95% (FUTO primary)
     }
     private val armedKeyTextColor = 0xFF131D36.toInt()
@@ -579,6 +581,12 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         functionalCtrlKey = findViewById(R.id.functional_key_ctrl)
         functionalAltKey = findViewById(R.id.functional_key_alt)
         defaultSpecialKeyTextColor = functionalCtrlKey?.textColors?.defaultColor ?: Color.WHITE
+        for (id in listOf(
+            R.id.functional_key_ctrl, R.id.functional_key_alt,
+            R.id.functional_key_esc, R.id.functional_key_tab
+        )) {
+            findViewById<TextView>(id)?.let { KeyboardTypeface.applyToTextView(it) }
+        }
         bindText(R.id.functional_key_esc, "\u001b")
         bindText(R.id.functional_key_tab, "\t")
         bindSticky(functionalCtrlKey, KeyEvent.META_CTRL_ON)

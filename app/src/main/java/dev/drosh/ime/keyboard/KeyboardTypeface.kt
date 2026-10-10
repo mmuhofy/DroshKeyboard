@@ -21,6 +21,10 @@ object KeyboardTypeface {
     @Volatile
     private var emojiTypefaceLoaded = false
 
+    private var cachedInterTypeface: Typeface? = null
+    @Volatile
+    private var interTypefaceLoaded = false
+
     private fun loadCustomTypeface(context: Context): Typeface? {
         return runCatching {
             Typeface.createFromFile(Settings.getCustomFontFile(context))
@@ -30,6 +34,17 @@ object KeyboardTypeface {
     private fun loadCustomEmojiTypeface(context: Context): Typeface? {
         return runCatching {
             Typeface.createFromFile(Settings.getCustomEmojiFontFile(context))
+        }.getOrNull()
+    }
+
+    /**
+     * Bundled Inter Regular, used as the keyboard-wide font. Lighter and more
+     * modern than the platform default sans. Falls back to null when it cannot
+     * be loaded.
+     */
+    private fun loadInterTypeface(context: Context): Typeface? {
+        return runCatching {
+            Typeface.createFromAsset(context.assets, INTER_FONT_ASSET)
         }.getOrNull()
     }
 
@@ -61,6 +76,19 @@ object KeyboardTypeface {
     }
 
     @JvmStatic
+    fun interTypeface(): Typeface? {
+        if (interTypefaceLoaded) return cachedInterTypeface
+        val context = Settings.getCurrentContext() ?: return null
+        synchronized(lock) {
+            if (!interTypefaceLoaded) {
+                cachedInterTypeface = loadInterTypeface(context)
+                interTypefaceLoaded = true
+            }
+            return cachedInterTypeface
+        }
+    }
+
+    @JvmStatic
     fun customFontFamily(): FontFamily? {
         if (!customTypefaceLoaded) customTypeface()
         return cachedCustomFontFamily
@@ -75,7 +103,7 @@ object KeyboardTypeface {
         return if (emojiTypeface != null && text != null && isEmoji(text)) {
             emojiTypeface
         } else {
-            customTypeface() ?: defaultTypeface
+            customTypeface() ?: interTypeface() ?: defaultTypeface
         }
     }
 
@@ -97,6 +125,10 @@ object KeyboardTypeface {
             customTypefaceLoaded = false
             cachedEmojiTypeface = null
             emojiTypefaceLoaded = false
+            cachedInterTypeface = null
+            interTypefaceLoaded = false
         }
     }
+
+    private const val INTER_FONT_ASSET = "fonts/Inter-Regular.ttf"
 }

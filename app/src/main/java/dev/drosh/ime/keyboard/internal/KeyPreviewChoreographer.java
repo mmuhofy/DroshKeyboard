@@ -110,9 +110,9 @@ public final class KeyPreviewChoreographer {
         Colors colors = Settings.getValues().mColors;
         colors.setBackground(keyPreviewView, ColorType.KEY_PREVIEW_BACKGROUND);
 
-        // The key preview is placed vertically above the top edge of the parent key with an
-        // arbitrary offset.
-        int previewY = key.getY() - previewHeight + key.getHeight() - mParams.mPreviewOffset
+        // The key preview floats above the parent key with a small gap,
+        // instead of the legacy box that overlapped the key itself.
+        int previewY = key.getY() - previewHeight - mParams.mPreviewOffset
                 + CoordinateUtils.y(originCoords);
 
         ViewLayoutUtils.placeViewAt(keyPreviewView, previewX, previewY, previewWidth, previewHeight);
