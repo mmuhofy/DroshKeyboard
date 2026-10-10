@@ -64,8 +64,9 @@
             style="?attr/suggestionWordStyle">
         </LinearLayout>
         <!-- Third stage of the quickbar: shown when the expand key is pressed
-             a second time (quickbar first, special keys second). Holds the keys
-             that have no soft key equivalent and are needed on a terminal. -->
+             a second time (quickbar first, special keys second). Chip-styled
+             keys for the ones that have no soft key equivalent and are needed
+             on a terminal. Ctrl and Alt arm a sticky modifier. -->
         <LinearLayout
             android:id="@+id/functional_keys"
             android:orientation="horizontal"
@@ -83,12 +84,15 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="2dp"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"
                 android:gravity="center"
+                android:background="@drawable/special_key_background"
                 android:textAllCaps="false"
+                android:textStyle="bold"
+                android:letterSpacing="0.04"
                 android:clickable="true"
-                android:focusable="true"  />
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/functional_key_alt"
@@ -97,12 +101,15 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="2dp"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"
                 android:gravity="center"
+                android:background="@drawable/special_key_background"
                 android:textAllCaps="false"
+                android:textStyle="bold"
+                android:letterSpacing="0.04"
                 android:clickable="true"
-                android:focusable="true"  />
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/functional_key_esc"
@@ -111,12 +118,15 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="2dp"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"
                 android:gravity="center"
+                android:background="@drawable/special_key_background"
                 android:textAllCaps="false"
+                android:textStyle="bold"
+                android:letterSpacing="0.04"
                 android:clickable="true"
-                android:focusable="true"  />
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/functional_key_tab"
@@ -125,12 +135,15 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="2dp"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"
                 android:gravity="center"
+                android:background="@drawable/special_key_background"
                 android:textAllCaps="false"
+                android:textStyle="bold"
+                android:letterSpacing="0.04"
                 android:clickable="true"
-                android:focusable="true"  />
+                android:focusable="true" />
         </LinearLayout>
     </LinearLayout>
 </merge>

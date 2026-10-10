@@ -29,6 +29,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InlineSuggestion;
 import android.view.inputmethod.InlineSuggestionsRequest;
 import android.view.inputmethod.InlineSuggestionsResponse;
@@ -1170,7 +1171,17 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onSpecialKeyEvent(final int keyCode, final int metaState) {
-        sendSpecialKeyEvent(keyCode, metaState);
+        // Kept for API compatibility: the special keys now use the text channel
+        // (see onSpecialTextInput) because key events are not reliably
+        // delivered to every editor. Fall back to the same channel when some
+        // other caller still routes through here.
+        if (keyCode == KeyEvent.KEYCODE_ESCAPE) {
+            onSpecialTextInput("\u001b");
+        } else if (keyCode == KeyEvent.KEYCODE_TAB) {
+            onSpecialTextInput("\t");
+        } else {
+            mInputLogic.sendDownUpKeyEventWithMetaState(keyCode, metaState);
+        }
     }
 
     @Override
@@ -1457,10 +1468,8 @@ public class LatinIME extends InputMethodService implements
 
     public void onTextInput(@Nullable String rawText) {
         if (rawText == null) return;
-        // A sticky modifier is armed: send this character as a real key event
-        // with the meta bits attached (Ctrl+C, Alt+B, ...) instead of plain
-        // text that the terminal would treat as an unmodified character.
-        if (rawText.length() == 1 && sendArmedMetaKey(rawText.charAt(0))) return;
+        // multi-character input (snippets, gestures) clears a pending sticky
+        // modifier instead of receiving its bits
         clearArmedModifier();
         // TODO: have the keyboard pass the correct key code when we need it.
         Event event = Event.createSoftwareTextEvent(rawText, KeyCode.MULTIPLE_CODE_POINTS, null);
@@ -1838,21 +1847,9 @@ public class LatinIME extends InputMethodService implements
     }
 
     /**
-     * Forwards a raw hardware key event from the functional keys to the editor.
-     *
-     * Ctrl, Alt, Esc and Tab have no soft key equivalent, so they go out as real
-     * key events with the requested modifier bits.
-     */
-    public void sendSpecialKeyEvent(final int keyCode, final int metaState) {
-        mInputLogic.sendDownUpKeyEventWithMetaState(keyCode, metaState);
-    }
-
-    /**
      * Sticky modifier armed from the special keys row of the quickbar. Set to a
      * [KeyEvent] meta mask (e.g. `META_CTRL_ON`) while waiting for the next key
-     * press, `0` when idle. The next character goes out as a key event with
-     * these bits attached instead of plain text, so a terminal receives
-     * Ctrl+C, Ctrl+D, Alt+B, ... as proper control sequences.
+     * press, `0` when idle.
      */
     private int mArmedMetaState = 0;
 
@@ -1874,22 +1871,68 @@ public class LatinIME extends InputMethodService implements
     }
 
     /**
-     * Sends a single character as a real key event when a sticky modifier is
-     * armed. Returns true when the character was consumed this way.
+     * Commits raw text to the editor, bypassing the word composer.
      *
-     * The shift bit is deliberately not attached even for uppercase letters:
-     * control sequences are case-insensitive (Ctrl+C == Ctrl+c), and a stray
-     * shift bit makes the terminal-side translation device-dependent.
+     * This is the channel the special keys use: a terminal maps control
+     * characters that arrive as text (1..31) back into proper control codes,
+     * so ESC, TAB and Ctrl+letter combinations survive intact. Key events, in
+     * contrast, go through an asynchronous binder and are not guaranteed to
+     * reach every editor with their meta bits.
      */
-    private boolean sendArmedMetaKey(final char c) {
-        if (mArmedMetaState == 0) return false;
-        if (Character.isHighSurrogate(c) || Character.isLowSurrogate(c)) return false;
-        final int keyCode = KeyCode.codePointToKeyEventCode(c);
-        if (keyCode == KeyEvent.KEYCODE_UNKNOWN) return false;
-        final int metaState = mArmedMetaState; // captured before clearing
+    @Override
+    public void onSpecialTextInput(final String text) {
+        final InputConnection connection = getCurrentInputConnection();
+        if (connection == null) return;
+        // finish any pending composition so the text lands at the cursor
+        connection.finishComposingText();
+        connection.commitText(text, 1);
+    }
+
+    /**
+     * When a sticky modifier is armed and {@code primaryCode} is a printable
+     * code point, sends the corresponding control sequence to the editor the
+     * same way Drosh's own extra key row does: Ctrl translates the character
+     * through the C0 table, Alt prefixes it with ESC. Returns true when the
+     * key was consumed.
+     */
+    public boolean consumeArmedMeta(final int primaryCode) {
+        if (mArmedMetaState == 0 || primaryCode <= 0) return false;
+        final boolean ctrl = (mArmedMetaState & KeyEvent.META_CTRL_ON) != 0;
+        final boolean alt = (mArmedMetaState & KeyEvent.META_ALT_ON) != 0;
+        if (!ctrl && !alt) return false;
+        final String text;
+        if (ctrl) {
+            final int ctrlChar = translateCtrlCharacter(primaryCode);
+            if (ctrlChar < 0) {
+                // not translatable: consume the modifier and let the key through
+                clearArmedModifier();
+                return false;
+            }
+            text = String.valueOf((char) ctrlChar);
+        } else {
+            text = "\u001b" + String.valueOf(Character.toChars(primaryCode));
+        }
         clearArmedModifier();
-        mInputLogic.sendDownUpKeyEventWithMetaState(keyCode, metaState);
+        onSpecialTextInput(text);
         return true;
+    }
+
+    /**
+     * C0 translation, mirroring `TerminalView.inputCodePoint` and Drosh's
+     * `InputDispatcher.translateCtrl`. Returns -1 when the character has no
+     * control equivalent.
+     */
+    private static int translateCtrlCharacter(final int codePoint) {
+        if (codePoint >= 'a' && codePoint <= 'z') return codePoint - 'a' + 1;
+        if (codePoint >= 'A' && codePoint <= 'Z') return codePoint - 'A' + 1;
+        if (codePoint == ' ' || codePoint == '2') return 0;
+        if (codePoint == '[' || codePoint == '3') return 27;
+        if (codePoint == '\\' || codePoint == '4') return 28;
+        if (codePoint == ']' || codePoint == '5') return 29;
+        if (codePoint == '^' || codePoint == '6') return 30;
+        if (codePoint == '_' || codePoint == '7' || codePoint == '/') return 31;
+        if (codePoint == '8') return 127;
+        return -1;
     }
 
     /**

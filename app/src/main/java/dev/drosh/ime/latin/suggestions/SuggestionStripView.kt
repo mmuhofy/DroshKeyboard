@@ -88,6 +88,13 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
          */
         fun onSpecialKeyEvent(keyCode: Int, metaState: Int)
         /**
+         * Commits raw text straight to the editor. Used by the special keys of
+         * the quickbar: a terminal receives ESC, Tab and the C0 codes of the
+         * sticky modifiers reliably through the text channel, while key events
+         * are asynchronous and lose their meta bits on the way.
+         */
+        fun onSpecialTextInput(text: String)
+        /**
          * Arms a sticky modifier (e.g. [KeyEvent.META_CTRL_ON]) that applies to
          * the next key press, or `0` to disarm. Used by Ctrl and Alt in the
          * special keys row: a terminal needs the modifier attached to the key
@@ -139,10 +146,12 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private var armedMetaState = 0
     private var functionalCtrlKey: TextView? = null
     private var functionalAltKey: TextView? = null
+    private val specialKeyChipBackground: Drawable? =
+        androidx.core.content.ContextCompat.getDrawable(context, R.drawable.special_key_background)
     private val armedKeyBackground = GradientDrawable().apply {
         shape = GradientDrawable.RECTANGLE
-        cornerRadius = 6f * resources.displayMetrics.density
-        setColor(0x339E9E9E.toInt())
+        cornerRadius = 14f * resources.displayMetrics.density
+        setColor(0x4D4C9EFF.toInt()) // Drosh accent, 30%
     }
     private val incognitoIcon = KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.INCOGNITO.name, context)
     private val toolbarArrowIcon = KeyboardIconsSet.instance.getNewDrawable(KeyboardIconsSet.NAME_TOOLBAR_KEY, context)
@@ -558,26 +567,26 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     /**
-     * Binds the special keys row. Esc and Tab send real key events, because
-     * they have no soft key equivalent. Ctrl and Alt arm a *sticky* modifier
-     * that attaches to the next key press: a terminal needs the meta bits on
-     * the key that follows, so `Ctrl` + `c` arrives as a single Ctrl+C key
-     * event instead of a bare modifier tap the shell ignores.
+     * Binds the special keys row. Esc and Tab commit their control characters
+     * directly as text. Ctrl and Alt arm a *sticky* modifier that attaches to
+     * the next key press: a terminal needs the control code on the key that
+     * follows, so `Ctrl` + `c` arrives as a single Ctrl+C byte instead of a
+     * bare modifier tap the shell ignores.
      */
     private fun setupFunctionalKeys() {
         functionalCtrlKey = findViewById(R.id.functional_key_ctrl)
         functionalAltKey = findViewById(R.id.functional_key_alt)
-        bindOneShot(R.id.functional_key_esc, KeyEvent.KEYCODE_ESCAPE, 0)
-        bindOneShot(R.id.functional_key_tab, KeyEvent.KEYCODE_TAB, 0)
+        bindText(R.id.functional_key_esc, "\u001b")
+        bindText(R.id.functional_key_tab, "\t")
         bindSticky(functionalCtrlKey, KeyEvent.META_CTRL_ON)
         bindSticky(functionalAltKey, KeyEvent.META_ALT_ON)
     }
 
-    private fun bindOneShot(id: Int, keyCode: Int, metaState: Int) {
+    private fun bindText(id: Int, text: String) {
         findViewById<View>(id)?.setOnClickListener { view ->
             performKeyFeedback(view)
             disarmModifier()
-            listener.onSpecialKeyEvent(keyCode, metaState)
+            listener.onSpecialTextInput(text)
         }
     }
 
@@ -614,12 +623,12 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     private fun refreshArmedKeyVisual() {
-        functionalCtrlKey?.setArmedVisual(armedMetaState == KeyEvent.META_CTRL_ON)
-        functionalAltKey?.setArmedVisual(armedMetaState == KeyEvent.META_ALT_ON)
-    }
-
-    private fun View.setArmedVisual(armed: Boolean) {
-        background = if (armed) armedKeyBackground else null
+        functionalCtrlKey?.apply {
+            background = if (armedMetaState == KeyEvent.META_CTRL_ON) armedKeyBackground else specialKeyChipBackground
+        }
+        functionalAltKey?.apply {
+            background = if (armedMetaState == KeyEvent.META_ALT_ON) armedKeyBackground else specialKeyChipBackground
+        }
     }
 
     private fun updateKeys() {

@@ -257,6 +257,10 @@ public final class KeyboardSwitcher {
         mSuggestionStripView.setVisibility(stripVisibility);
         mClipboardHistoryView.setVisibility(View.GONE);
         mClipboardHistoryView.stopClipboardHistory();
+        if (mSnippetsView != null) {
+            mSnippetsView.stopSnippets();
+            mSnippetsView.setVisibility(View.GONE);
+        }
     }
 
     public void toggleLayout(@NonNull LayoutDirective.Utility layout, int autoCapsFlags, @Nullable RecapitalizeMode recapitalizeMode) {
@@ -709,6 +713,10 @@ public final class KeyboardSwitcher {
             mClipboardStripScrollView.post(() -> mClipboardStripScrollView.fullScroll(HorizontalScrollView.FOCUS_RIGHT));
             mClipboardStripScrollView.setVisibility(View.VISIBLE);
             mEmojiPalettesView.setVisibility(View.GONE);
+            if (mSnippetsView != null) {
+                mSnippetsView.stopSnippets();
+                mSnippetsView.setVisibility(View.GONE);
+            }
             mClipboardHistoryView.startClipboardHistory(mLatinIME.getClipboardHistoryManager(), mKeyboardView.getKeyVisualAttribute(),
                 mLatinIME.getCurrentInputEditorInfo(), mLatinIME.mKeyboardActionListener);
             mClipboardHistoryView.setVisibility(View.VISIBLE);

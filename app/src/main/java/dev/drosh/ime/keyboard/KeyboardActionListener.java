@@ -135,6 +135,15 @@ public interface KeyboardActionListener {
      */
     void onSpecialKeyEvent(int keyCode, int metaState);
 
+    /**
+     * Commits a raw string straight to the editor, bypassing the word composer.
+     * Used by the special keys of the quickbar: a terminal receives control
+     * characters (ESC, TAB, and the C0 codes produced by the sticky Ctrl/Alt)
+     * reliably through the text channel, while key events are asynchronous and
+     * not guaranteed to reach every editor.
+     */
+    void onSpecialTextInput(String text);
+
     KeyboardActionListener EMPTY_LISTENER = new Adapter();
 
     enum SwipeAction { NONE, MOVE_CURSOR, SWITCH_LANGUAGE, TOGGLE_NUMPAD, TOGGLE_DPAD, HIDE_KEYBOARD, TOUCHPAD_MODE }
@@ -195,5 +204,7 @@ public interface KeyboardActionListener {
         public void resetMetaState() {}
         @Override
         public void onSpecialKeyEvent(int keyCode, int metaState) {}
+        @Override
+        public void onSpecialTextInput(String text) {}
     }
 }

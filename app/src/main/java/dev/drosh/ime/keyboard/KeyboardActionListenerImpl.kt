@@ -103,6 +103,9 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
     }
 
     override fun onCodeInput(primaryCode: Int, x: Int, y: Int, isKeyRepeat: Boolean) {
+        // a sticky modifier armed from the special keys row consumes this key
+        // and sends it as a control sequence (Ctrl+C, Alt+B, ...)
+        if (latinIME.consumeArmedMeta(primaryCode)) return
         when (primaryCode) {
             KeyCode.TOGGLE_AUTOCORRECT -> return settings.toggleAutoCorrect()
             KeyCode.TOGGLE_INCOGNITO_MODE -> {
@@ -154,7 +157,9 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
     override fun onTextInput(text: String?) = latinIME.onTextInput(text)
 
     override fun onSpecialKeyEvent(keyCode: Int, metaState: Int) =
-        latinIME.sendSpecialKeyEvent(keyCode, metaState)
+        latinIME.onSpecialKeyEvent(keyCode, metaState)
+
+    override fun onSpecialTextInput(text: String) = latinIME.onSpecialTextInput(text)
 
     override fun onContent(content: InputContentInfoCompat) {
         val editorInfo = latinIME.currentInputEditorInfo
