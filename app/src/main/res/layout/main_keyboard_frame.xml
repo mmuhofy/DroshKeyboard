@@ -38,6 +38,9 @@
         <include
             android:id="@+id/snippets_view"
             layout="@layout/snippets_view" />
+        <include
+            android:id="@+id/mouse_pad_view"
+            layout="@layout/mouse_pad_view" />
 
         <ImageButton
             android:id="@+id/btn_stop_one_handed_mode"

@@ -477,6 +477,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
                 toggleLayout(Utility.CLIPBOARD, autoCapsFlags, recapitalizeMode)
             }
             KeyCode.SNIPPETS -> toggleLayout(Utility.SNIPPETS, autoCapsFlags, recapitalizeMode)
+            KeyCode.MOUSE -> toggleLayout(Utility.MOUSE, autoCapsFlags, recapitalizeMode)
             KeyCode.NUMPAD -> toggleLayout(Utility.NUMPAD, autoCapsFlags, recapitalizeMode)
             KeyCode.DPAD -> toggleLayout(Utility.DPAD, autoCapsFlags, recapitalizeMode)
             KeyCode.SYMBOL -> toggleLayout(Utility.SYMBOLS, autoCapsFlags, recapitalizeMode)
@@ -507,6 +508,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
         EMOJI,
         CLIPBOARD,
         SNIPPETS,
+        MOUSE,
         NUMPAD,
         DPAD,
     ;
@@ -518,6 +520,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
                 EMOJI -> Utility.EMOJI
                 CLIPBOARD -> Utility.CLIPBOARD
                 SNIPPETS -> Utility.SNIPPETS
+                MOUSE -> Utility.MOUSE
                 NUMPAD -> Utility.NUMPAD
                 DPAD -> Utility.DPAD
             }

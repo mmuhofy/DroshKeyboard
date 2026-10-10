@@ -144,6 +144,15 @@ public interface KeyboardActionListener {
      */
     void onSpecialTextInput(String text);
 
+    /**
+     * Sends a mouse pad command to the editor as a private input command.
+     * Only the Drosh terminal app understands it (see
+     * {@code MouseProtocol}); every other editor ignores it.
+     *
+     * @param data bundle carrying the op and its parameters
+     */
+    void onMouseInput(android.os.Bundle data);
+
     KeyboardActionListener EMPTY_LISTENER = new Adapter();
 
     enum SwipeAction { NONE, MOVE_CURSOR, SWITCH_LANGUAGE, TOGGLE_NUMPAD, TOGGLE_DPAD, HIDE_KEYBOARD, TOUCHPAD_MODE }
@@ -206,5 +215,7 @@ public interface KeyboardActionListener {
         public void onSpecialKeyEvent(int keyCode, int metaState) {}
         @Override
         public void onSpecialTextInput(String text) {}
+        @Override
+        public void onMouseInput(android.os.Bundle data) {}
     }
 }

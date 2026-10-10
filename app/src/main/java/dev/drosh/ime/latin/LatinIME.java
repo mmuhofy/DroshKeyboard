@@ -1871,6 +1871,45 @@ public class LatinIME extends InputMethodService implements
      */
     private int mArmedMetaState = 0;
 
+    /**
+     * Sends a mouse pad command to the editor as a private input command.
+     *
+     * Fire-and-forget: the protocol has no response channel, which is fine
+     * because the app owns the pointer state and the keyboard only streams
+     * deltas and button events.
+     */
+    public void sendMouseInput(final android.os.Bundle data) {
+        final InputConnection connection = getCurrentInputConnection();
+        if (connection == null) return;
+        try {
+            connection.performPrivateCommand(
+                    dev.drosh.ime.keyboard.mouse.MouseProtocol.ACTION, data);
+        } catch (Exception e) {
+            Log.w(TAG, "mouse command failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Whether the mouse pad can do anything in the current editor: only the
+     * Drosh terminal's classic input surface (TYPE_NULL, or the character
+     * based variant it uses while enforcing char input). Block mode's text
+     * field and every other app are reported unsupported.
+     */
+    public boolean isMousePadSupported() {
+        final EditorInfo info = getCurrentInputEditorInfo();
+        if (info == null) return false;
+        final String pkg = info.packageName;
+        if (pkg == null || !(pkg.equals("dev.drosh") || pkg.startsWith("dev.drosh.")))
+            return false;
+        final int inputType = info.inputType;
+        if (inputType == EditorInfo.TYPE_NULL) return true;
+        // TerminalView switches to a visible-password text variation while it
+        // enforces character-based input; the mouse still belongs there.
+        return (inputType & android.text.InputType.TYPE_MASK_CLASS) == android.text.InputType.TYPE_CLASS_TEXT
+                && (inputType & android.text.InputType.TYPE_MASK_VARIATION)
+                        == android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
+    }
+
     @Override
     public void onArmSpecialMeta(final int metaState) {
         mArmedMetaState = metaState;

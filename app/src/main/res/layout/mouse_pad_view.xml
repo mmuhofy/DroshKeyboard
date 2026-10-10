@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SPDX-License-Identifier: GPL-3.0-only
+-->
+<dev.drosh.ime.keyboard.mouse.MousePadView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:orientation="vertical"
+    android:visibility="gone"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:id="@+id/mouse_pad_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/mouse_pad_title"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <ImageButton
+            android:id="@+id/mouse_pad_close"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/mouse_pad_close"
+            android:src="@drawable/ic_close" />
+    </LinearLayout>
+
+    <!-- The pad surface: pointer moves it, taps click, double-tap+drags selects. -->
+    <FrameLayout
+        android:id="@+id/mouse_pad_surface"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/mouse_pad_surface">
+
+        <TextView
+            android:id="@+id/mouse_pad_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:padding="10dp"
+            android:gravity="center"
+            android:text="@string/mouse_pad_hint"
+            android:textSize="11sp" />
+
+        <!-- haptic flash -->
+        <View
+            android:id="@+id/mouse_pad_haptic"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#1FFF7878" />
+    </FrameLayout>
+</dev.drosh.ime.keyboard.mouse.MousePadView>

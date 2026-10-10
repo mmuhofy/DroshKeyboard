@@ -35,6 +35,7 @@ public sealed interface LayoutDirective {
         EMOJI(KeyboardState.Mode.EMOJI),
         CLIPBOARD(KeyboardState.Mode.CLIPBOARD),
         SNIPPETS(KeyboardState.Mode.SNIPPETS),
+        MOUSE(KeyboardState.Mode.MOUSE),
         NUMPAD(KeyboardState.Mode.NUMPAD),
         DPAD(KeyboardState.Mode.DPAD),
     ;

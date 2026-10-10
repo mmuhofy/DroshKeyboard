@@ -74,6 +74,14 @@
     <string name="switch_language">Switch language</string>
     <!-- Toolbar key that opens the snippet list -->
     <string name="snippets">Snippets</string>
+    <!-- Toolbar key that opens the mouse pad -->
+    <string name="mouse">Mouse</string>
+    <!-- Mouse pad -->
+    <string name="mouse_pad_title">Mouse touchpad</string>
+    <string name="mouse_pad_unsupported">Bu modda desteklenmiyor — fare yalnızca Drosh terminal ekranında çalışır.</string>
+    <string name="mouse_pad_hint">dokun = sol tık · iki parmakla tek dokunma = sağ tık · çift dokun + sürükle = seçim</string>
+    <string name="mouse_pad_close">Kapat</string>
+    <string name="spoken_description_mode_mouse">Mouse mode</string>
     <!-- Empty state of the snippet list -->
     <string name="snippets_empty">No snippets yet. Add one with the + button, or define them in ~/.drosh/snippets.json as {"alias": "command"}.</string>
     <!-- Empty state when Drosh could not be reached; parameter is the failure reason -->

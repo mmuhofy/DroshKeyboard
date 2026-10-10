@@ -788,6 +788,10 @@ public final class InputLogic {
                 // action to perform here. The case only exists so the functional
                 // event is recognised instead of throwing "Unknown event".
                 break;
+            case KeyCode.MOUSE:
+                // Toggling the mouse pad is handled in
+                // {@link KeyboardState#onEvent(Event,int)}, same as SNIPPETS.
+                break;
             case KeyCode.SHIFT_ENTER:
                 // todo: try using sendDownUpKeyEventWithMetaState() and remove the key code maybe
                 final Event tmpEvent = Event.createSoftwareKeypressEvent(Constants.CODE_ENTER,

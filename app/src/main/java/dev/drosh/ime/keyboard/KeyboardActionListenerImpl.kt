@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package dev.drosh.ime.keyboard
 
+import android.os.Bundle
 import android.text.InputType
 import android.util.SparseArray
 import android.view.KeyEvent
@@ -106,6 +107,14 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
         // a sticky modifier armed from the special keys row consumes this key
         // and sends it as a control sequence (Ctrl+C, Alt+B, ...)
         if (latinIME.consumeArmedMeta(primaryCode)) return
+        // the mouse pad only means something in the Drosh terminal; saying so
+        // beats silently opening a pad that cannot click anywhere
+        if (primaryCode == KeyCode.MOUSE && !latinIME.isMousePadSupported()) {
+            keyboardSwitcher.showToast(
+                latinIME.getString(dev.drosh.ime.latin.R.string.mouse_pad_unsupported), true
+            )
+            return
+        }
         when (primaryCode) {
             KeyCode.TOGGLE_AUTOCORRECT -> return settings.toggleAutoCorrect()
             KeyCode.TOGGLE_INCOGNITO_MODE -> {
@@ -160,6 +169,8 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
         latinIME.onSpecialKeyEvent(keyCode, metaState)
 
     override fun onSpecialTextInput(text: String) = latinIME.onSpecialTextInput(text)
+
+    override fun onMouseInput(data: Bundle) = latinIME.sendMouseInput(data)
 
     override fun onContent(content: InputContentInfoCompat) {
         val editorInfo = latinIME.currentInputEditorInfo
