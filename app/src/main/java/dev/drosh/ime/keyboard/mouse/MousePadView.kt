@@ -5,6 +5,8 @@ package dev.drosh.ime.keyboard.mouse
 
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -26,11 +28,16 @@ import dev.drosh.ime.latin.common.Constants
  * Sensitivity (pixels per cell) lives entirely on the app side, so this
  * view never interprets the deltas itself.
  *
- * Gestures, deliberately minimal:
+ * Gestures, deliberately minimal — text selection stays the terminal's own
+ * long-press gesture, and is not duplicated here:
  * - press + drag              → pointer move (no button held)
  * - short tap                 → left click
  * - two-finger single tap     → right click
- * - double-tap, then drag     → selection (left button held), release ends it
+ *
+ * While a finger is down the pad reports a move every [MOVE_COALESCE_MS],
+ * even with a zero delta: that is the keep-alive the app uses to keep
+ * auto-scrolling when the pointer is pushed against the top or bottom edge
+ * and held there.
  *
  * UNTESTED — verify on device.
  */
@@ -44,11 +51,11 @@ class MousePadView @JvmOverloads constructor(
     private lateinit var surface: FrameLayout
     private lateinit var haptic: View
 
-    /** Non-zero while the left button is held (selection mode). */
-    private var dragging = false
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var moveFlusher: Runnable? = null
+
     private var started = false
-    private var lastTapAt = 0L
-    private var tapCandidate = false
+    private var padHold = false
     private var accX = 0
     private var accY = 0
     private var downAt = 0L
@@ -57,7 +64,6 @@ class MousePadView @JvmOverloads constructor(
     private var lastY = 0f
     private var activePointerId = -1
     private var secondPointerId = -1
-    private var secondPointerDownPx = 0
     private var lastMoveSent = 0L
 
     fun setKeyboardActionListener(listener: KeyboardActionListener) {
@@ -79,13 +85,9 @@ class MousePadView @JvmOverloads constructor(
     fun stopMouse() {
         if (!started) return // never started: nothing to release or hide
         started = false
+        stopMoveFlusher()
+        padHold = false
         surface.setOnTouchListener(null)
-        // never leave a held button behind when the pad closes
-        if (dragging) {
-            send(MouseProtocol.OP_UP, button = 0)
-            dragging = false
-            setArmed(false)
-        }
         send(MouseProtocol.OP_CLOSE)
         resetState()
     }
@@ -100,29 +102,21 @@ class MousePadView @JvmOverloads constructor(
     }
 
     private fun resetState() {
-        dragging = false
-        tapCandidate = false
-        activePointerId = -1
-        secondPointerId = -1
+        padHold = false
         accX = 0
         accY = 0
         movedPx = 0
-        lastMoveSent = 0L
+        activePointerId = -1
+        secondPointerId = -1
+        setArmed(false)
     }
 
-    private fun send(
-        op: String,
-        dx: Int = 0,
-        dy: Int = 0,
-        button: Int = -1,
-        held: Boolean = false,
-    ) {
+    private fun send(op: String, dx: Int = 0, dy: Int = 0, button: Int = -1) {
         val data = Bundle().apply {
             putString(MouseProtocol.KEY_OP, op)
             if (op == MouseProtocol.OP_MOVE) {
                 putInt(MouseProtocol.KEY_DX, dx)
                 putInt(MouseProtocol.KEY_DY, dy)
-                if (held) putBoolean(MouseProtocol.KEY_HELD, true)
             }
             if (button >= 0) putInt(MouseProtocol.KEY_BUTTON, button)
         }
@@ -154,20 +148,20 @@ class MousePadView @JvmOverloads constructor(
                     activePointerId = event.getPointerId(event.actionIndex)
                     lastX = event.x
                     lastY = event.y
-                    downAt = android.os.SystemClock.elapsedRealtime()
+                    downAt = SystemClock.elapsedRealtime()
                     movedPx = 0
                     accX = 0
                     accY = 0
-                    tapCandidate = true
+                    padHold = true
                     setArmed(true)
+                    startMoveFlusher()
                 } else if (secondPointerId == -1) {
                     secondPointerId = event.getPointerId(event.actionIndex)
-                    secondPointerDownPx = movedPx
                 }
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (activePointerId == -1) return true
+                if (activePointerId == -1 || !padHold) return true
                 val index = event.findPointerIndex(activePointerId)
                 if (index < 0) return true
                 val x = event.getX(index)
@@ -177,51 +171,30 @@ class MousePadView @JvmOverloads constructor(
                 lastX = x
                 lastY = y
                 movedPx += Math.abs(dx.toInt()) + Math.abs(dy.toInt())
-                // selection mode ignores taps: the drag is the point
-                if (dragging) tapCandidate = false
                 accX += dx.toInt()
                 accY += dy.toInt()
-                maybeFlushMove()
-            }
-
-            MotionEvent.ACTION_POINTER_UP -> {
-                // note: the second finger lifting is handled on the final UP
+                flushMove()
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                val quick = android.os.SystemClock.elapsedRealtime() - downAt < TAP_MS
-                        && movedPx < TAP_PX
+                val quick = SystemClock.elapsedRealtime() - downAt < TAP_MS && movedPx < TAP_PX
                 val hadSecondFinger = secondPointerId != -1
-                // flush whatever movement was not sent yet
-                maybeFlushMove(force = true)
+                padHold = false
+                stopMoveFlusher()
+                flushMove()
 
-                if (dragging) {
-                    // selection ends: release the held button
-                    send(MouseProtocol.OP_UP, button = 0)
-                    dragging = false
-                    setArmed(false)
-                } else if (quick && hadSecondFinger) {
-                    // two-finger single tap = right click
-                    hapticFeedback()
-                    flashHaptic()
-                    send(MouseProtocol.OP_CLICK, button = 2)
-                } else if (quick) {
-                    hapticFeedback()
-                    flashHaptic()
-                    val now = android.os.SystemClock.elapsedRealtime()
-                    send(MouseProtocol.OP_CLICK, button = 0)
-                    if (now - lastTapAt < DOUBLE_TAP_MS) {
-                        // second tap within the window: hold the left button
-                        // and let the following drag select
-                        dragging = true
-                        send(MouseProtocol.OP_DOWN, button = 0)
-                        tapCandidate = false
-                        lastTapAt = 0L
-                    } else {
-                        lastTapAt = now
+                when {
+                    quick && hadSecondFinger -> {
+                        // two-finger single tap = right click
+                        hapticFeedback()
+                        flashHaptic()
+                        send(MouseProtocol.OP_CLICK, button = 2)
                     }
-                } else if (!dragging) {
-                    setArmed(false)
+                    quick -> {
+                        hapticFeedback()
+                        flashHaptic()
+                        send(MouseProtocol.OP_CLICK, button = 0)
+                    }
                 }
                 resetState()
             }
@@ -230,15 +203,38 @@ class MousePadView @JvmOverloads constructor(
     }
 
     /**
-     * Emits accumulated pixel deltas, coalesced so a fast drag does not
-     * flood the binder. The app converts the pixels to cells itself.
+     * Reports the accumulated deltas at most every [MOVE_COALESCE_MS], so a
+     * fast drag does not flood the binder. A periodic flusher keeps reporting
+     * while a finger is down even when it stops moving: that is what tells
+     * the app the pad is still held against the edge (auto-scroll).
      */
-    private fun maybeFlushMove(force: Boolean = false) {
-        val now = android.os.SystemClock.elapsedRealtime()
-        if (accX == 0 && accY == 0) return
-        if (!force && now - lastMoveSent < MOVE_COALESCE_MS) return
-        lastMoveSent = now
-        send(MouseProtocol.OP_MOVE, dx = accX, dy = accY, held = dragging)
+    private fun startMoveFlusher() {
+        stopMoveFlusher()
+        val flusher = object : Runnable {
+            override fun run() {
+                if (!padHold) return
+                // forced: a zero-delta report is the keep-alive that tells the
+                // app the pad is still held against the edge
+                flushMove(force = true)
+                mainHandler.postDelayed(this, MOVE_COALESCE_MS)
+            }
+        }
+        moveFlusher = flusher
+        mainHandler.postDelayed(flusher, MOVE_COALESCE_MS)
+    }
+
+    private fun stopMoveFlusher() {
+        moveFlusher?.let { mainHandler.removeCallbacks(it) }
+        moveFlusher = null
+    }
+
+    private fun flushMove(force: Boolean = false) {
+        if (!force) {
+            if (accX == 0 && accY == 0) return
+            if (SystemClock.elapsedRealtime() - lastMoveSent < MOVE_COALESCE_MS) return
+        }
+        lastMoveSent = SystemClock.elapsedRealtime()
+        send(MouseProtocol.OP_MOVE, dx = accX, dy = accY)
         accX = 0
         accY = 0
     }
@@ -246,7 +242,6 @@ class MousePadView @JvmOverloads constructor(
     private companion object {
         const val TAP_MS = 260L
         const val TAP_PX = 12
-        const val DOUBLE_TAP_MS = 320L
         const val MOVE_COALESCE_MS = 32L
     }
 }

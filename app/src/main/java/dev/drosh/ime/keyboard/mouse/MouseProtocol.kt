@@ -20,8 +20,6 @@ object MouseProtocol {
     const val OP_OPEN = "open"
     const val OP_CLOSE = "close"
     const val OP_MOVE = "move"
-    const val OP_DOWN = "down"
-    const val OP_UP = "up"
     const val OP_CLICK = "click"
 
     const val KEY_OP = "op"
@@ -30,9 +28,7 @@ object MouseProtocol {
     const val KEY_DX = "dx"
     const val KEY_DY = "dy"
 
-    /** 0 = left, 2 = right. Only 0 can be held for a drag (selection). */
+    /** 0 = left, 2 = right. Text selection is the terminal's own long-press
+     *  gesture, so the pad has no held-button mode. */
     const val KEY_BUTTON = "button"
-
-    /** Set on [OP_MOVE] while a button is held, so the app emits drag motion. */
-    const val KEY_HELD = "held"
 }

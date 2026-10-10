@@ -79,7 +79,7 @@
     <!-- Mouse pad -->
     <string name="mouse_pad_title">Mouse touchpad</string>
     <string name="mouse_pad_unsupported">Bu modda desteklenmiyor — fare yalnızca Drosh terminal ekranında çalışır.</string>
-    <string name="mouse_pad_hint">dokun = sol tık · iki parmakla tek dokunma = sağ tık · çift dokun + sürükle = seçim</string>
+    <string name="mouse_pad_hint">dokun = sol tık · iki parmakla tek dokunma = sağ tık · kenarda tut = otomatik kaydır</string>
     <string name="mouse_pad_close">Kapat</string>
     <string name="spoken_description_mode_mouse">Mouse mode</string>
     <!-- Empty state of the snippet list -->
