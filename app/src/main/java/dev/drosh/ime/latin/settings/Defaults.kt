@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
-import android.util.TypedValue
 import android.view.Gravity
 import dev.drosh.ime.keyboard.KeyboardActionListener
 import dev.drosh.ime.keyboard.KeyboardTheme
@@ -21,9 +20,9 @@ import dev.drosh.ime.latin.utils.defaultToolbarPref
 object Defaults {
     fun initDynamicDefaults(context: Context) {
         PREF_GESTURE_DYNAMIC_PREVIEW_FOLLOW_SYSTEM = getTransitionAnimationScale(context) != 0.0f
-        val dm = context.resources.displayMetrics
-        val px600 = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 600f, dm)
-        PREF_POPUP_ON = dm.widthPixels >= px600 || dm.heightPixels >= px600
+        // key preview popups on every device: FUTO shows them too and they are
+        // part of the look (and of confirming terminal key presses)
+        PREF_POPUP_ON = true
     }
 
     // must correspond to a file name
@@ -49,7 +48,9 @@ object Defaults {
     const val PREF_THEME_STYLE = KeyboardTheme.STYLE_ROUNDED
     fun PREF_ICON_STYLE(prefs: SharedPreferences) = prefs.getString(Settings.PREF_THEME_STYLE, PREF_THEME_STYLE)!!
     const val PREF_ACCENT_SHIFTED_ICON = false
-    const val PREF_THEME_COLORS = KeyboardTheme.THEME_LIGHT
+    // FUTO-style dark palette, day and night: this keyboard is built for a
+    // dark terminal, so the dark Drosh theme is the default everywhere.
+    const val PREF_THEME_COLORS = KeyboardTheme.THEME_DROSH_GLASS
     const val PREF_THEME_COLORS_NIGHT = KeyboardTheme.THEME_DROSH_GLASS
     const val PREF_THEME_KEY_BORDERS = true
     @JvmField
@@ -91,10 +92,10 @@ object Defaults {
     @JvmField
     val PREF_SPLIT_SPACER_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
     @JvmField
-    // taller keys and wider gaps than upstream: a terminal keyboard is used
-    // one-thumb and for long stretches, Gboard-like roominess matters more
-    // than saving vertical space
-    val PREF_KEYBOARD_HEIGHT_SCALE = arrayOf(1.12f, 1.12f, 1.0f, 1.0f)
+    // FUTO Keyboard proportions: the stock gap/height already match (4dp
+    // horizontal, ~8dp vertical, ~205dp total height), so keep the scales at
+    // 100% instead of drifting away with custom values
+    val PREF_KEYBOARD_HEIGHT_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
     @JvmField
     val PREF_BOTTOM_ROW_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
     @JvmField
@@ -103,8 +104,8 @@ object Defaults {
     @JvmField
     val PREF_SIDE_PADDING_SCALE = Array(8) { 0f }
     @JvmField
-    val PREF_KEY_GAP_SCALE = arrayOf(1.25f, 1.25f, 1.25f, 1.25f)
-    const val PREF_FONT_SCALE = 1.05f
+    val PREF_KEY_GAP_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
+    const val PREF_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_HINT_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_EMOJI_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_EMOJI_KEY_FIT = true

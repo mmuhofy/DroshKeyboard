@@ -379,6 +379,12 @@ class DefaultColors (
     private val spaceBarText: Int = keyHintText,
     private val gesture: Int = accent,
     private var keyboardBackground: Drawable? = null,
+    /** overrides for the derived pressed states, so a theme can pin them exactly (FUTO port) */
+    private val pressedKeyBackground: Int? = null,
+    private val pressedFunctionalKey: Int? = null,
+    private val pressedActionKey: Int? = null,
+    /** override for popup panels and key previews (FUTO port) */
+    private val popupPanelBackground: Int? = null,
 ) : Colors {
     private val navBar: Int
     /** brightened or darkened variant of [background], to be used if exact background color would be
@@ -398,9 +404,9 @@ class DefaultColors (
     private val actionKeyIconColorFilter: ColorFilter?
 
     private val backgroundStateList: ColorStateList
-    private val keyStateList: ColorStateList
-    private val functionalKeyStateList: ColorStateList
-    private val actionKeyStateList: ColorStateList
+    private var keyStateList: ColorStateList
+    private var functionalKeyStateList: ColorStateList
+    private var actionKeyStateList: ColorStateList
     private val spaceBarStateList: ColorStateList
     private val adjustedBackgroundStateList: ColorStateList
     private val stripBackgroundList: ColorStateList
@@ -471,13 +477,26 @@ class DefaultColors (
             isBrightColor(accent) -> colorFilter(Color.DKGRAY)
             else -> null
         }
+
+        // pin the pressed states when the theme provides them (FUTO port);
+        // otherwise keep the derived values computed above
+        if (pressedKeyBackground != null) {
+            keyStateList = pressedStateList(pressedKeyBackground, keyBackground)
+        }
+        if (pressedFunctionalKey != null) {
+            functionalKeyStateList = pressedStateList(pressedFunctionalKey, functionalKey)
+        }
+        if (pressedActionKey != null) {
+            actionKeyStateList = pressedStateList(pressedActionKey, accent)
+        }
     }
 
     override fun get(color: ColorType): Int = when (color) {
         TOOL_BAR_KEY_ENABLED_BACKGROUND, EMOJI_CATEGORY_SELECTED, ACTION_KEY_BACKGROUND, CLIPBOARD_PIN -> accent
         SHIFT_KEY_ICON -> if (accentShiftedIcon) accent else keyText
         AUTOFILL_BACKGROUND_CHIP -> if (themeStyle == STYLE_MATERIAL && !hasKeyBorders) background else adjustedBackground
-        GESTURE_PREVIEW, POPUP_KEYS_BACKGROUND, MORE_SUGGESTIONS_BACKGROUND, KEY_PREVIEW_BACKGROUND -> adjustedBackground
+        GESTURE_PREVIEW, POPUP_KEYS_BACKGROUND, MORE_SUGGESTIONS_BACKGROUND, KEY_PREVIEW_BACKGROUND ->
+            popupPanelBackground ?: adjustedBackground
         TOOL_BAR_EXPAND_KEY_BACKGROUND, CLIPBOARD_SUGGESTION_BACKGROUND -> doubleAdjustedBackground
         GESTURE_TRAIL -> gesture
         KEY_TEXT, REMOVE_SUGGESTION_ICON, FUNCTIONAL_KEY_TEXT, KEY_ICON, EMOJI_KEY_TEXT,

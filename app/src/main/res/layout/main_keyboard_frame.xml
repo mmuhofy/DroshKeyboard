@@ -12,18 +12,6 @@
     android:layout_gravity="bottom"
     android:orientation="vertical" >
 
-    <!-- Glass top hairline. Shown only with the Drosh glass theme; see
-         LatinIME.updateGlassChrome. 1dp translucent white, inset from the
-         rounded corners by the keyboard padding. -->
-    <View
-        android:id="@+id/glass_top_edge"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginStart="26dp"
-        android:layout_marginEnd="26dp"
-        android:background="#59FFFFFF"
-        android:visibility="gone" />
-
     <include
         android:id="@+id/strip_container"
         layout="@layout/strip_container" />

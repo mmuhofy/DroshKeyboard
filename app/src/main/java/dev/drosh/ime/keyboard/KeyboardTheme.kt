@@ -196,19 +196,23 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     keyboardBackground = backgroundImage
                 )
                 THEME_DROSH_GLASS -> DefaultColors(
-                    // Dark glass surface: keys stay opaque so labels read on
-                    // any backdrop, the window itself is translucent so the
-                    // system blur shows through around them.
+                    // Drosh theme, FUTO Keyboard palette: dark surface with
+                    // clearly separated key chips and a soft blue accent.
                     themeStyle,
                     hasBorders,
-                    "#4C9EFF".toColorInt(),
-                    "#D914161C".toColorInt(),
-                    "#2B2F3A".toColorInt(),
-                    "#232733".toColorInt(),
-                    "#2B2F3A".toColorInt(),
-                    "#F2F2F2".toColorInt(),
-                    "#AEB4C0".toColorInt(),
-                    keyboardBackground = backgroundImage
+                    "#B2C8FF".toColorInt(),     // accent (action key, gesture trail, icons)
+                    "#FF121316".toColorInt(),   // keyboard surface
+                    "#FF1E2024".toColorInt(),   // normal key
+                    "#FF17181C".toColorInt(),   // functional key
+                    "#FF1E2024".toColorInt(),   // spacebar
+                    "#FFE6E6EE".toColorInt(),   // key text
+                    "#FFBBBDBF".toColorInt(),   // key hint text
+                    // FUTO pressed states: a lighter overlay on keys, and the
+                    // secondary container tone on the action key
+                    pressedKeyBackground = "#FF3B3E46".toColorInt(),
+                    pressedFunctionalKey = "#FF2A2C33".toColorInt(),
+                    pressedActionKey = "#FF17181C".toColorInt(),
+                    popupPanelBackground = "#FF3C3F47".toColorInt(),
                 )
                 THEME_HOLO_WHITE -> DefaultColors(
                     themeStyle,

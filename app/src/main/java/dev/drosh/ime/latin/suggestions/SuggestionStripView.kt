@@ -150,9 +150,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         androidx.core.content.ContextCompat.getDrawable(context, R.drawable.special_key_background)
     private val armedKeyBackground = GradientDrawable().apply {
         shape = GradientDrawable.RECTANGLE
-        cornerRadius = 14f * resources.displayMetrics.density
-        setColor(0x4D4C9EFF.toInt()) // Drosh accent, 30%
+        cornerRadius = 9f * resources.displayMetrics.density
+        setColor(0xF2B2C8FF.toInt()) // Drosh accent, 95% (FUTO primary)
     }
+    private val armedKeyTextColor = 0xFF131D36.toInt()
+    private var defaultSpecialKeyTextColor: Int = Color.WHITE
     private val incognitoIcon = KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.INCOGNITO.name, context)
     private val toolbarArrowIcon = KeyboardIconsSet.instance.getNewDrawable(KeyboardIconsSet.NAME_TOOLBAR_KEY, context)
     private val defaultToolbarBackground: Drawable = toolbarExpandKey.background
@@ -576,6 +578,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private fun setupFunctionalKeys() {
         functionalCtrlKey = findViewById(R.id.functional_key_ctrl)
         functionalAltKey = findViewById(R.id.functional_key_alt)
+        defaultSpecialKeyTextColor = functionalCtrlKey?.textColors?.defaultColor ?: Color.WHITE
         bindText(R.id.functional_key_esc, "\u001b")
         bindText(R.id.functional_key_tab, "\t")
         bindSticky(functionalCtrlKey, KeyEvent.META_CTRL_ON)
@@ -624,10 +627,14 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     private fun refreshArmedKeyVisual() {
         functionalCtrlKey?.apply {
-            background = if (armedMetaState == KeyEvent.META_CTRL_ON) armedKeyBackground else specialKeyChipBackground
+            val armed = armedMetaState == KeyEvent.META_CTRL_ON
+            background = if (armed) armedKeyBackground else specialKeyChipBackground
+            setTextColor(if (armed) armedKeyTextColor else defaultSpecialKeyTextColor)
         }
         functionalAltKey?.apply {
-            background = if (armedMetaState == KeyEvent.META_ALT_ON) armedKeyBackground else specialKeyChipBackground
+            val armed = armedMetaState == KeyEvent.META_ALT_ON
+            background = if (armed) armedKeyBackground else specialKeyChipBackground
+            setTextColor(if (armed) armedKeyTextColor else defaultSpecialKeyTextColor)
         }
     }
 

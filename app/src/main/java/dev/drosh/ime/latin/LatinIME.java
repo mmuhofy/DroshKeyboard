@@ -795,9 +795,6 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onStartInput(final EditorInfo editorInfo, final boolean restarting) {
         mHandler.onStartInput(editorInfo, restarting);
-        // Re-applied on every input start so a theme switch takes effect
-        // without restarting the keyboard. Idempotent and cheap.
-        updateGlassChrome();
     }
 
     @Override
@@ -1032,10 +1029,6 @@ public class LatinIME extends InputMethodService implements
             setNavigationBarColor();
             workaroundForHuaweiStatusBarIssue();
         }
-        // The glass hairline and the rounded top corners live inside the
-        // input view, so they can only be looked up once that view is
-        // attached to the window. onCreateInputView() runs too early.
-        updateGlassChrome();
     }
 
     @Override
@@ -1933,56 +1926,6 @@ public class LatinIME extends InputMethodService implements
         if (codePoint == '_' || codePoint == '7' || codePoint == '/') return 31;
         if (codePoint == '8') return 127;
         return -1;
-    }
-
-    /**
-     * Rounded top corners + top hairline, only with the glass theme.
-     *
-     * Clips the keyboard frame to a top-rounded outline and shows the
-     * hairline view from main_keyboard_frame.xml. Everything else keeps the
-     * stock rectangular frame so no other theme is affected.
-     */
-    private void updateGlassChrome() {
-        final boolean glass = dev.drosh.ime.keyboard.KeyboardTheme.isDroshGlassActive(this);
-        final android.view.Window window = getWindow() != null ? getWindow().getWindow() : null;
-        if (window == null) return;
-        final android.view.View inputView = window.getDecorView();
-        if (inputView == null) return;
-        final android.view.View edge =
-                inputView.findViewById(getResources().getIdentifier(
-                        "glass_top_edge", "id", getPackageName()));
-        if (edge != null) {
-            edge.setVisibility(glass
-                    ? android.view.View.VISIBLE : android.view.View.GONE);
-        }
-        final android.view.View frame =
-                inputView.findViewById(getResources().getIdentifier(
-                        "main_keyboard_frame", "id", getPackageName()));
-        if (frame == null) return;
-        if (glass) {
-            final float radius = 26f * getResources().getDisplayMetrics().density;
-            frame.setOutlineProvider(new android.view.ViewOutlineProvider() {
-                @Override
-                public void getOutline(android.view.View view, android.graphics.Outline outline) {
-                    // Top corners only: the bottom sits on the screen edge,
-                    // and rounding it would cut a notch out of the keyboard.
-                    final android.graphics.Path path = new android.graphics.Path();
-                    final float w = view.getWidth();
-                    final float h = view.getHeight();
-                    final float[] radii = new float[]{
-                            radius, radius, radius, radius,
-                            0f, 0f, 0f, 0f,
-                    };
-                    path.addRoundRect(0f, 0f, w, h, radii,
-                            android.graphics.Path.Direction.CW);
-                    outline.setConvexPath(path);
-                }
-            });
-            frame.setClipToOutline(true);
-        } else {
-            frame.setClipToOutline(false);
-            frame.setOutlineProvider(android.view.ViewOutlineProvider.BACKGROUND);
-        }
     }
 
     @SuppressWarnings("deprecation")

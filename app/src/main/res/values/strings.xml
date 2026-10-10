@@ -759,7 +759,7 @@ New dictionary:
     <!-- Theme name for black theme (based on old amoled black) -->
     <string name="theme_name_black" tools:keep="@string/theme_name_black">Black</string>
     <!-- Theme name for the Drosh glass theme -->
-    <string name="theme_name_drosh_glass" tools:keep="@string/theme_name_drosh_glass">Drosh Glass</string>
+    <string name="theme_name_drosh_glass" tools:keep="@string/theme_name_drosh_glass">Drosh</string>
     <!-- Theme name for dynamic colors light theme -->
     <string name="theme_name_dynamic" tools:keep="@string/theme_name_dynamic">Dynamic colors</string>
     <!-- Theme name for blue-gray theme -->
