@@ -29,6 +29,7 @@ import dev.drosh.ime.settings.screens.PersonalDictionariesScreen
 import dev.drosh.ime.settings.screens.PersonalDictionaryScreen
 import dev.drosh.ime.settings.screens.PreferencesScreen
 import dev.drosh.ime.settings.screens.SecondaryLayoutScreen
+import dev.drosh.ime.settings.screens.SpecialKeysScreen
 import dev.drosh.ime.settings.screens.SubtypeScreen
 import dev.drosh.ime.settings.screens.TextCorrectionScreen
 import dev.drosh.ime.settings.screens.ToolbarScreen
@@ -71,6 +72,7 @@ fun SettingsNavHost(
                 onClickTextCorrection = { navController.navigate(SettingsDestination.TextCorrection) },
                 onClickPreferences = { navController.navigate(SettingsDestination.Preferences) },
                 onClickToolbar = { navController.navigate(SettingsDestination.Toolbar) },
+                onClickSpecialKeys = { navController.navigate(SettingsDestination.SpecialKeys) },
                 onClickGestureTyping = { navController.navigate(SettingsDestination.GestureTyping) },
                 onClickDataGathering = { navController.navigate(SettingsDestination.DataGathering) },
                 onClickAdvanced = { navController.navigate(SettingsDestination.Advanced) },
@@ -92,6 +94,9 @@ fun SettingsNavHost(
         }
         composable(SettingsDestination.Toolbar) {
             ToolbarScreen(onClickBack = ::goBack)
+        }
+        composable(SettingsDestination.SpecialKeys) {
+            SpecialKeysScreen(onClickBack = ::goBack)
         }
         composable(SettingsDestination.GestureTyping) {
             GestureTypingScreen(onClickBack = ::goBack)
@@ -150,6 +155,7 @@ object SettingsDestination {
     const val TextCorrection = "text_correction"
     const val Preferences = "preferences"
     const val Toolbar = "toolbar"
+    const val SpecialKeys = "special_keys"
     const val GestureTyping = "gesture_typing"
     const val DataGathering = "data_gathering" // remove when data gathering phase is done (end of 2026 latest)
     const val DataReview = "data_review" // remove when data gathering phase is done (end of 2026 latest)

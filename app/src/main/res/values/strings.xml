@@ -116,10 +116,29 @@
     <!-- Close button of the snippet list -->
     <string name="snippet_close">Close snippets</string>
     <!-- Functional keys shown in the third stage of the quickbar. -->
-    <string name="special_keys_ctrl">Ctrl</string>
-    <string name="special_keys_alt">Alt</string>
-    <string name="special_keys_esc">Esc</string>
-    <string name="special_keys_tab">Tab</string>
+    <!-- Special keys row labels (also looked up by the reorder dialog, which
+         uses the lowercase enum names) -->
+    <string name="ctrl">Ctrl</string>
+    <string name="alt">Alt</string>
+    <string name="esc">Esc</string>
+    <string name="tab">Tab</string>
+    <string name="enter">Enter</string>
+    <string name="fn">Fn</string>
+    <string name="pipe">|</string>
+    <string name="tilde">~</string>
+    <string name="slash">/</string>
+    <string name="dash">-</string>
+    <string name="underscore">_</string>
+    <string name="backslash">\</string>
+    <string name="backtick">`</string>
+    <!-- Special keys settings screen -->
+    <string name="special_keys_title">Special keys</string>
+    <string name="special_keys_preview">Preview</string>
+    <string name="special_keys_active">Active keys</string>
+    <string name="special_keys_hidden">Other keys</string>
+    <string name="special_keys_reorder">Reorder keys</string>
+    <string name="special_keys_reset">Reset to default</string>
+    <string name="special_keys_default_note">Default: Ctrl, Alt, Esc, Tab, Enter. The quickbar mode key switches between these and the normal keys.</string>
     <!-- Option name for switching language / subtype and input method -->
     <string name="language_switch_key_switch_both">Switch both</string>
     <!-- Option to show language switch key -->

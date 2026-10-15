@@ -113,7 +113,9 @@ object Defaults {
     @JvmField
     val PREF_SPACE_HORIZONTAL_SWIPE = KeyboardActionListener.SwipeAction.MOVE_CURSOR.name
     @JvmField
-    val PREF_SPACE_VERTICAL_SWIPE = KeyboardActionListener.SwipeAction.NONE.name
+    // vertical space swipe sends Up/Down arrows: history in the shell,
+    // cursor movement in a TUI
+    val PREF_SPACE_VERTICAL_SWIPE = KeyboardActionListener.SwipeAction.MOVE_CURSOR.name
     const val PREF_DELETE_SWIPE = true
     const val PREF_AUTOSPACE_AFTER_PUNCTUATION = false
     const val PREF_AUTOSPACE_AFTER_SUGGESTION = true

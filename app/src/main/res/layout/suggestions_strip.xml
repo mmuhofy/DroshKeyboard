@@ -27,6 +27,17 @@
             android:background="@drawable/toolbar_expand_key_background"
             style="?attr/suggestionWordStyle"
             android:contentDescription="@string/more_keys_strip_description" />
+        <!-- Quickbar mode switch: normal pinned keys <-> special keys row. -->
+        <ImageButton
+            android:id="@+id/suggestions_strip_modeswitch"
+            android:layout_width="@dimen/config_suggestions_strip_edge_key_width"
+            android:layout_height="@dimen/config_suggestions_strip_edge_key_width"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="0"
+            android:layout_marginStart="1dp"
+            android:background="@drawable/toolbar_expand_key_background"
+            style="?attr/suggestionWordStyle"
+            android:contentDescription="@string/special_keys_title" />
         <HorizontalScrollView
             android:id="@+id/toolbar_container"
             android:layout_width="match_parent"
@@ -63,10 +74,8 @@
             android:minWidth="0dp"
             style="?attr/suggestionWordStyle">
         </LinearLayout>
-        <!-- Third stage of the quickbar: shown when the expand key is pressed
-             a second time (quickbar first, special keys second). Chip-styled
-             keys for the ones that have no soft key equivalent and are needed
-             on a terminal. Ctrl and Alt arm a sticky modifier. -->
+        <!-- Special keys row: chips are built at runtime from the user's
+             special keys (Settings -> Special keys). -->
         <LinearLayout
             android:id="@+id/functional_keys"
             android:orientation="horizontal"
@@ -76,70 +85,6 @@
             android:gravity="center_vertical"
             android:visibility="gone"
             style="?attr/suggestionWordStyle">
-
-            <TextView
-                android:id="@+id/functional_key_ctrl"
-                android:text="@string/special_keys_ctrl"
-                style="?attr/suggestionWordStyle"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="3dp"
-                android:layout_marginEnd="3dp"
-                android:gravity="center"
-                android:background="@drawable/special_key_background"
-                android:textAllCaps="false"
-                android:letterSpacing="0.04"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/functional_key_alt"
-                android:text="@string/special_keys_alt"
-                style="?attr/suggestionWordStyle"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="3dp"
-                android:layout_marginEnd="3dp"
-                android:gravity="center"
-                android:background="@drawable/special_key_background"
-                android:textAllCaps="false"
-                android:letterSpacing="0.04"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/functional_key_esc"
-                android:text="@string/special_keys_esc"
-                style="?attr/suggestionWordStyle"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="3dp"
-                android:layout_marginEnd="3dp"
-                android:gravity="center"
-                android:background="@drawable/special_key_background"
-                android:textAllCaps="false"
-                android:letterSpacing="0.04"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/functional_key_tab"
-                android:text="@string/special_keys_tab"
-                style="?attr/suggestionWordStyle"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="3dp"
-                android:layout_marginEnd="3dp"
-                android:gravity="center"
-                android:background="@drawable/special_key_background"
-                android:textAllCaps="false"
-                android:letterSpacing="0.04"
-                android:clickable="true"
-                android:focusable="true" />
         </LinearLayout>
     </LinearLayout>
 </merge>
