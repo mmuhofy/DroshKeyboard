@@ -312,14 +312,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         toolbarExpandKey.scaleX = (if (toolbarVisible) -1f else 1f) * direction
     }
 
-    /** Advances to the next quickbar stage, wrapping around after the last one. */
+    /** Switches between pinned keys (or special keys) and the full toolbar. */
     private fun advanceStripStage() {
         setStripStage(
-            when (stripStage) {
-                STRIP_STAGE_SUGGESTIONS -> STRIP_STAGE_TOOLBAR
-                STRIP_STAGE_TOOLBAR -> STRIP_STAGE_FUNCTIONAL
-                else -> STRIP_STAGE_SUGGESTIONS
-            }
+            if (stripStage == STRIP_STAGE_TOOLBAR) STRIP_STAGE_SUGGESTIONS else STRIP_STAGE_TOOLBAR
         )
     }
 
@@ -660,7 +656,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
                 key.emitText != null -> {
                     performKeyFeedback(view)
                     disarmModifier()
-                    listener.onSpecialTextInput(key.emitText)
+                    val text = key.emitText
+                    if (text != null) listener.onSpecialTextInput(text)
                 }
             }
         }
