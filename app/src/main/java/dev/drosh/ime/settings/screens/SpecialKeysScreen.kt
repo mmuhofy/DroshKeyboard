@@ -340,13 +340,6 @@ private fun specialKeySub(key: SpecialKey): String = when {
     else -> ""
 }
 
-@Composable
-private fun Modifier.onWidthMeasured(onWidth: (Float) -> Unit): Modifier {
-    return this.then(
-        Modifier.background(Color.Transparent).onGloballyPositionedCompat(onWidth)
-    )
-}
-
 @Preview
 @Composable
 private fun PreviewSpecialKeysScreen() {
