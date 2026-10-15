@@ -1,12 +1,11 @@
 [popup_keys]
 a â
-ı i î
-i ı î
-o ö
-u ü û
-s ş
-g ğ
 c ç
+g ğ
+i ı İ î
+o ö
+s ş
+u ü û
 
 [tlds]
 tr gov.tr edu.tr com.tr

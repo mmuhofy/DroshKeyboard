@@ -1054,6 +1054,32 @@ public class LatinIME extends InputMethodService implements
             setNavigationBarColor();
             workaroundForHuaweiStatusBarIssue();
         }
+        // The frame is recreated with the input view, so the soft corners are
+        // re-applied on every show; the frame must be attached for a height.
+        applyKeyboardCornerOutline();
+    }
+
+    /**
+     * Soft top corners on the keyboard frame: rounded at the top, square at
+     * the bottom where the keyboard meets the screen edge.
+     */
+    private void applyKeyboardCornerOutline() {
+        final android.view.View view = mKeyboardSwitcher.getMainKeyboardFrame();
+        if (view == null) return;
+        final float radius = 26f * getResources().getDisplayMetrics().density;
+        view.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override
+            public void getOutline(android.view.View frame, android.graphics.Outline outline) {
+                final float w = frame.getWidth();
+                final float h = frame.getHeight();
+                if (w <= 0f || h <= 0f) return;
+                final float[] radii = {radius, radius, radius, radius, 0f, 0f, 0f, 0f};
+                final android.graphics.Path path = new android.graphics.Path();
+                path.addRoundRect(0f, 0f, w, h, radii, android.graphics.Path.Direction.CW);
+                outline.setConvexPath(path);
+            }
+        });
+        view.setClipToOutline(true);
     }
 
     @Override

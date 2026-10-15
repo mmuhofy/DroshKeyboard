@@ -139,6 +139,9 @@
     <string name="special_keys_reorder">Reorder keys</string>
     <string name="special_keys_reset">Reset to default</string>
     <string name="special_keys_default_note">Default: Ctrl, Alt, Esc, Tab, Enter. The quickbar mode key switches between these and the normal keys.</string>
+    <string name="special_keys_scale_hint">Scale mode: drag sideways to widen or narrow the selected key.</string>
+    <string name="special_keys_row_empty">Empty row — add a key from the card below</string>
+    <string name="special_keys_pool_hint">Drag a key into the row to add it, or tap to append. Drag a row key down here to remove it.</string>
     <!-- Option name for switching language / subtype and input method -->
     <string name="language_switch_key_switch_both">Switch both</string>
     <!-- Option to show language switch key -->

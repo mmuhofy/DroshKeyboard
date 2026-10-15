@@ -549,6 +549,11 @@ public final class KeyboardSwitcher {
         return mKeyboardViewWrapper;
     }
 
+    /** The keyboard frame, for the soft top corners applied by the IME. */
+    public View getMainKeyboardFrame() {
+        return mMainKeyboardFrame;
+    }
+
     public View getEmojiTabStrip() {
         return mEmojiTabStripView;
     }

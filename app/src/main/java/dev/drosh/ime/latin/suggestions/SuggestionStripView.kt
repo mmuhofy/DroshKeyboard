@@ -25,6 +25,7 @@ import android.view.View.OnLongClickListener
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
@@ -142,12 +143,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val pinnedKeys: ViewGroup = findViewById(R.id.pinned_keys)
     private val suggestionsStrip: ViewGroup = findViewById(R.id.suggestions_strip)
     private val toolbarExpandKey = findViewById<ImageButton>(R.id.suggestions_strip_toolbar_key)
-    private val modeSwitchKey = findViewById<ImageButton>(R.id.suggestions_strip_modeswitch)
+    private val toolbarExpandKey = findViewById<ImageButton>(R.id.suggestions_strip_toolbar_key)
     private val functionalKeys: ViewGroup = findViewById(R.id.functional_keys)
-    private var stripStage = STRIP_STAGE_SUGGESTIONS
+    private var stripStage = STRIP_STAGE_SPECIAL
 
-    // quickbar mode: normal pinned keys, or the special keys row
-    private var specialMode = false
+    // F1-F12 layer inside the special keys row
     private var fnLayerActive = false
     private var specialKeysSignature: String? = null
 
@@ -155,11 +155,6 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private var armedMetaState = 0
     private val specialKeyChipBackground: Drawable? =
         androidx.core.content.ContextCompat.getDrawable(context, R.drawable.special_key_background)
-    private val armedKeyBackground = GradientDrawable().apply {
-        shape = GradientDrawable.RECTANGLE
-        cornerRadius = 50f * resources.displayMetrics.density // pill, matches the chip
-        setColor(0xF2B2C8FF.toInt()) // Drosh accent, 95% (FUTO primary)
-    }
     private val armedKeyTextColor = 0xFF131D36.toInt()
     private val defaultSpecialKeyTextColor: Int =
         Settings.getValues().mColors.get(ColorType.KEY_TEXT)
@@ -177,7 +172,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     init {
         val colors = Settings.getValues().mColors
 
-        // expand key
+        // expand key: toggles between the special keys row and the app's
+        // quickbar (toolbar). One button, two modes.
         // weird way of setting size (default is config_suggestions_strip_edge_key_width)
         // but better not change it or people will complain
         val toolbarHeight = min(toolbarExpandKey.layoutParams.height, resources.getDimension(R.dimen.config_suggestions_strip_height).toInt())
@@ -185,19 +181,6 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         toolbarExpandKey.layoutParams.width = toolbarHeight // we want it square
         colors.setBackground(toolbarExpandKey, ColorType.STRIP_BACKGROUND) // necessary because background is re-used for defaultToolbarBackground
         colors.setColor(toolbarExpandKey, ColorType.TOOL_BAR_EXPAND_KEY)
-        colors.setColor(toolbarExpandKey.background, ColorType.TOOL_BAR_EXPAND_KEY_BACKGROUND)
-
-        // quickbar mode switch: normal pinned keys <-> special keys row
-        modeSwitchKey.layoutParams.height = toolbarHeight
-        modeSwitchKey.layoutParams.width = toolbarHeight
-        colors.setBackground(modeSwitchKey, ColorType.STRIP_BACKGROUND)
-        colors.setColor(modeSwitchKey, ColorType.TOOL_BAR_EXPAND_KEY)
-        modeSwitchKey.setImageDrawable(
-            androidx.core.content.ContextCompat.getDrawable(
-                context, R.drawable.sym_keyboard_quickbar_modeswitch
-            )
-        )
-        modeSwitchKey.setOnClickListener { toggleSpecialMode() }
         colors.setColor(toolbarExpandKey.background, ColorType.TOOL_BAR_EXPAND_KEY_BACKGROUND)
 
         // background indicator for pinned keys
@@ -285,23 +268,24 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     /**
-     * The quickbar has two stages when the expand key is pressed: the pinned
-     * keys (or, in special mode, the special keys row) and the full toolbar.
-     * Callers that only care about showing or hiding the toolbar keep using
-     * this.
+     * The quickbar has exactly two modes, toggled by the expand key:
+     * the special keys row, and the app's quickbar (mic, clipboard, mouse,
+     * snippets, ...). Callers that only care about showing or hiding the
+     * toolbar keep using this.
      */
     fun setToolbarVisibility(toolbarVisible: Boolean) {
-        setStripStage(if (toolbarVisible) STRIP_STAGE_TOOLBAR else STRIP_STAGE_SUGGESTIONS)
+        setStripStage(if (toolbarVisible) STRIP_STAGE_TOOLBAR else STRIP_STAGE_SPECIAL)
     }
 
     private fun setStripStage(stage: Int) {
         stripStage = stage
         val toolbarVisible = stage == STRIP_STAGE_TOOLBAR
-        val functionalVisible = stage == STRIP_STAGE_SUGGESTIONS && specialMode
-        pinnedKeys.isVisible = stage == STRIP_STAGE_SUGGESTIONS && !specialMode
-        suggestionsStrip.isVisible = stage == STRIP_STAGE_SUGGESTIONS && !specialMode
+        val specialVisible = stage == STRIP_STAGE_SPECIAL
+        // two clean modes: the special row alone, or the app's quickbar
+        pinnedKeys.isVisible = toolbarVisible
+        suggestionsStrip.isVisible = false
         toolbarContainer.isVisible = toolbarVisible
-        functionalKeys.isVisible = functionalVisible
+        functionalKeys.isVisible = specialVisible
 
         if (DEBUG_SUGGESTIONS) {
             for (view in debugInfoViews) {
@@ -310,12 +294,13 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         }
 
         toolbarExpandKey.scaleX = (if (toolbarVisible) -1f else 1f) * direction
+        if (specialVisible) renderSpecialKeys()
     }
 
-    /** Switches between pinned keys (or special keys) and the full toolbar. */
+    /** Toggles between the special keys row and the app's quickbar. */
     private fun advanceStripStage() {
         setStripStage(
-            if (stripStage == STRIP_STAGE_TOOLBAR) STRIP_STAGE_SUGGESTIONS else STRIP_STAGE_TOOLBAR
+            if (stripStage == STRIP_STAGE_TOOLBAR) STRIP_STAGE_SPECIAL else STRIP_STAGE_TOOLBAR
         )
     }
 
@@ -586,35 +571,20 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     /**
-     * Switches the quickbar between the normal pinned keys and the special
-     * keys row. The mode button is the first key, so the switch is always one
-     * tap away in either direction.
-     */
-    private fun toggleSpecialMode() {
-        specialMode = !specialMode
-        fnLayerActive = false
-        setStripStage(STRIP_STAGE_SUGGESTIONS)
-        renderSpecialKeys()
-    }
-
-    /**
      * Builds the special keys row from the user's key set. Every key has
      * exactly one behavior — sticky arm (Ctrl, Alt), text commit (Esc, Tab,
-     * Enter, symbols), arrow, or the Fn layer — so keys can be reordered and
-     * disabled freely.
+     * Enter, symbols), arrow, or the Fn layer — so keys can be reordered,
+     * resized and disabled freely.
      */
     private fun renderSpecialKeys() {
-        if (!specialMode) {
-            functionalKeys.removeAllViews()
-            return
-        }
-        val signature = SpecialKey.enabledKeys(context.prefs()).joinToString { it.name } + "|fn=$fnLayerActive"
+        val entries = SpecialKey.parse(context.prefs()).filter { it.enabled }
+        val signature = entries.joinToString { "${it.key.name}:${it.width}" } + "|fn=$fnLayerActive"
         if (signature == specialKeysSignature) return
         specialKeysSignature = signature
         functionalKeys.removeAllViews()
         if (fnLayerActive) {
             repeat(SpecialKey.FN_KEY_COUNT) { index ->
-                functionalKeys.addView(makeSpecialChip("F${index + 1}") {
+                functionalKeys.addView(makeSpecialChip("F${index + 1}", 1f) {
                     performKeyFeedback(it)
                     listener.onCodeInput(
                         SpecialKey.fnKeyCode(index),
@@ -629,52 +599,76 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             }
             return
         }
-        for (key in SpecialKey.enabledKeys(context.prefs())) {
-            functionalKeys.addView(makeSpecialChip(key))
+        for (entry in entries) {
+            functionalKeys.addView(makeSpecialChip(entry))
         }
+        refreshArmedKeyVisual()
     }
 
-    private fun makeSpecialChip(key: SpecialKey): TextView {
-        val chip = makeSpecialChip(context.getString(key.labelResId)) { view ->
-            when {
-                key.isSticky -> armSticky(view, key)
-                key.isFn -> {
-                    performKeyFeedback(view)
-                    fnLayerActive = true
-                    renderSpecialKeys()
-                }
-                key.isArrow -> {
-                    performKeyFeedback(view)
-                    disarmModifier()
-                    listener.onCodeInput(
-                        key.code,
-                        Constants.NOT_A_COORDINATE,
-                        Constants.NOT_A_COORDINATE,
-                        false,
-                    )
-                }
-                key.emitText != null -> {
-                    performKeyFeedback(view)
-                    disarmModifier()
-                    val text = key.emitText
-                    if (text != null) listener.onSpecialTextInput(text)
-                }
-            }
+    private fun newChipBackground(): Drawable? =
+        specialKeyChipBackground?.constantState?.newDrawable(resources)
+
+    private fun makeSpecialChip(entry: SpecialKey.Entry): View {
+        val key = entry.key
+        val iconName = key.iconName
+        if (iconName != null) {
+            val chip = ImageButton(context, null, R.attr.suggestionWordStyle)
+            chip.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT)
+                .apply { weight = entry.width }
+            val icon = KeyboardIconsSet.instance.getNewDrawable(iconName, context)
+            chip.setImageDrawable(icon)
+            chip.scaleType = ImageView.ScaleType.CENTER
+            chip.setPadding(6.dpToPx(resources), 4.dpToPx(resources), 6.dpToPx(resources), 4.dpToPx(resources))
+            chip.background = newChipBackground()
+            chip.isClickable = true
+            chip.setOnClickListener { view -> onSpecialChipClick(view, key) }
+            chip.tag = key
+            return chip
+        }
+        val chip = makeSpecialChip(context.getString(key.labelResId), entry.width) { view ->
+            onSpecialChipClick(view, key)
         }
         chip.tag = key
         return chip
     }
 
-    private fun makeSpecialChip(label: String, onClick: (View) -> Unit): TextView {
+    private fun onSpecialChipClick(view: View, key: SpecialKey) {
+        when {
+            key.isSticky -> armSticky(view, key)
+            key.isFn -> {
+                performKeyFeedback(view)
+                fnLayerActive = true
+                renderSpecialKeys()
+            }
+            key.isArrow -> {
+                performKeyFeedback(view)
+                disarmModifier()
+                listener.onCodeInput(
+                    key.code,
+                    Constants.NOT_A_COORDINATE,
+                    Constants.NOT_A_COORDINATE,
+                    false,
+                )
+            }
+            key.emitText != null -> {
+                performKeyFeedback(view)
+                disarmModifier()
+                val text = key.emitText
+                if (text != null) listener.onSpecialTextInput(text)
+            }
+        }
+    }
+
+    private fun makeSpecialChip(label: String, width: Float, onClick: (View) -> Unit): TextView {
         val chip = TextView(context, null, R.attr.suggestionWordStyle)
         chip.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT)
-            .apply { weight = 1f }
+            .apply { weight = width }
         chip.gravity = android.view.Gravity.CENTER
         chip.text = label
         chip.textSize = 13f
         chip.setPadding(4.dpToPx(resources), 0, 4.dpToPx(resources), 0)
         chip.isClickable = true
-        chip.background = specialKeyChipBackground
+        chip.background = newChipBackground()
         chip.setTextColor(defaultSpecialKeyTextColor)
         KeyboardTypeface.applyToTextView(chip)
         chip.setOnClickListener { view -> view?.let { onClick(it) } }
@@ -717,10 +711,18 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         applyArmedVisual(functionalKeys.findViewWithTag(SpecialKey.ALT), armedMetaState == KeyEvent.META_ALT_ON)
     }
 
+    /**
+     * The chip background is a selector with an activated state, so arming
+     * only flips the flag and the text/icon color; the pressed state comes
+     * for free from the same drawable.
+     */
     private fun applyArmedVisual(view: View?, armed: Boolean) {
         view ?: return
-        view.background = if (armed) armedKeyBackground else specialKeyChipBackground
-        (view as? TextView)?.setTextColor(if (armed) armedKeyTextColor else defaultSpecialKeyTextColor)
+        view.isActivated = armed
+        when (view) {
+            is TextView -> view.setTextColor(if (armed) armedKeyTextColor else defaultSpecialKeyTextColor)
+            is ImageView -> view.setColorFilter(if (armed) armedKeyTextColor else defaultSpecialKeyTextColor)
+        }
     }
 
     private fun updateKeys() {
@@ -767,9 +769,9 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     companion object {
-        /** Quickbar shows the pinned keys next to the suggestions. */
-        private const val STRIP_STAGE_SUGGESTIONS = 0
-        /** Quickbar shows the full toolbar. */
+        /** Quickbar shows the special keys row. */
+        private const val STRIP_STAGE_SPECIAL = 0
+        /** Quickbar shows the app's toolbar (mic, clipboard, mouse, ...). */
         private const val STRIP_STAGE_TOOLBAR = 1
 
         @JvmField

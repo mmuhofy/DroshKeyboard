@@ -27,17 +27,6 @@
             android:background="@drawable/toolbar_expand_key_background"
             style="?attr/suggestionWordStyle"
             android:contentDescription="@string/more_keys_strip_description" />
-        <!-- Quickbar mode switch: normal pinned keys <-> special keys row. -->
-        <ImageButton
-            android:id="@+id/suggestions_strip_modeswitch"
-            android:layout_width="@dimen/config_suggestions_strip_edge_key_width"
-            android:layout_height="@dimen/config_suggestions_strip_edge_key_width"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="0"
-            android:layout_marginStart="1dp"
-            android:background="@drawable/toolbar_expand_key_background"
-            style="?attr/suggestionWordStyle"
-            android:contentDescription="@string/special_keys_title" />
         <HorizontalScrollView
             android:id="@+id/toolbar_container"
             android:layout_width="match_parent"

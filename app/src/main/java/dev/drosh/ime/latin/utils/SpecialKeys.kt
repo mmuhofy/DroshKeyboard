@@ -2,6 +2,8 @@
 package dev.drosh.ime.latin.utils
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
+import dev.drosh.ime.keyboard.internal.KeyboardIconsSet
 import dev.drosh.ime.keyboard.internal.keyboard_parser.floris.KeyCode
 import dev.drosh.ime.latin.R
 import dev.drosh.ime.latin.common.Constants.Separators
@@ -11,8 +13,8 @@ import dev.drosh.ime.latin.common.Constants.Separators
  * terminal — the sticky modifiers, the control characters, arrows and the
  * symbols a command line needs.
  *
- * Every key has exactly one behavior, so a key can be moved or disabled
- * freely:
+ * Every key has exactly one behavior, so a key can be moved, resized or
+ * disabled freely:
  * - [isSticky] arms and applies to the next key press (Ctrl, Alt)
  * - [emitText] commits through the terminal's text channel — the channel
  *   proven for control characters (ESC, TAB) and control codes
@@ -73,6 +75,16 @@ enum class SpecialKey {
         BACKTICK -> R.string.backtick
     }
 
+    /** Icon name for the key, or null when the key shows a text label. */
+    val iconName: String? get() = when (this) {
+        TAB -> KeyboardIconsSet.NAME_TAB_KEY
+        ENTER -> KeyboardIconsSet.NAME_ENTER_KEY
+        else -> null
+    }
+
+    /** One entry of the stored key set: the key, its state and its width. */
+    data class Entry(val key: SpecialKey, val enabled: Boolean, val width: Float = 1f)
+
     companion object {
         const val PREF = "special_keys"
 
@@ -84,24 +96,45 @@ enum class SpecialKey {
             KeyCode.F7, KeyCode.F8, KeyCode.F9, KeyCode.F10, KeyCode.F11, KeyCode.F12,
         )
 
-        /** All keys in canonical order, enabled flag per key. */
+        /** Widths are clamped so a single key can never flood the row. */
+        const val MIN_WIDTH = 0.6f
+        const val MAX_WIDTH = 2.5f
+
+        /** All keys in canonical order, enabled flag and width per key. */
         val default: String get() = entries.joinToString(Separators.ENTRY) {
             it.name + Separators.KV + (it in defaultEnabled)
         }
 
-        /** Enabled keys in stored order (prefs order wins, unknown keys dropped). */
-        fun enabledKeys(prefs: SharedPreferences): List<SpecialKey> =
+        /** Parses the stored value, tolerating older `KEY=state` entries. */
+        fun parse(prefs: SharedPreferences): List<Entry> =
             prefs.getString(PREF, default)!!
                 .split(Separators.ENTRY)
                 .mapNotNull { entry ->
-                    val parts = entry.split(Separators.KV)
-                    if (parts.size != 2 || parts[1].toBoolean()) {
-                        runCatching { SpecialKey.valueOf(parts[0]) }.getOrNull()
-                    } else null
+                    val main = entry.split(Separators.KV)
+                    if (main.isEmpty()) return@mapNotNull null
+                    val key = runCatching { SpecialKey.valueOf(main[0]) }.getOrNull()
+                        ?: return@mapNotNull null
+                    val enabled = main.getOrNull(1)?.toBoolean() ?: (key in defaultEnabled)
+                    val width = main.getOrNull(2)?.toFloatOrNull()?.coerceIn(MIN_WIDTH, MAX_WIDTH) ?: 1f
+                    Entry(key, enabled, width)
                 }
 
-        fun fnKeyCode(index: Int): Int =
-            fnKeys.getOrElse(index) { KeyCode.UNSPECIFIED }
+        fun write(prefs: SharedPreferences, entries: List<Entry>) {
+            val value = entries.joinToString(Separators.ENTRY) {
+                it.key.name + Separators.KV + it.enabled + Separators.KV + it.width
+            }
+            prefs.edit { putString(PREF, value) }
+        }
+
+        fun reset(prefs: SharedPreferences) {
+            prefs.edit { remove(PREF) }
+        }
+
+        /** Enabled keys in stored order. */
+        fun enabledKeys(prefs: SharedPreferences): List<SpecialKey> =
+            parse(prefs).filter { it.enabled }.map { it.key }
+
+        fun fnKeyCode(index: Int): Int = fnKeys.getOrElse(index) { KeyCode.UNSPECIFIED }
 
         const val FN_KEY_COUNT = 12
     }
