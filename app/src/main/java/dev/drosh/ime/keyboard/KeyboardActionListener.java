@@ -216,8 +216,6 @@ public interface KeyboardActionListener {
         @Override
         public void onSpecialTextInput(String text) {}
         @Override
-        public void onArmCustomMeta(String id, int metaState, int keyCode) {}
-        @Override
         public void onMouseInput(android.os.Bundle data) {}
     }
 }

@@ -170,9 +170,6 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
 
     override fun onSpecialTextInput(text: String) = latinIME.onSpecialTextInput(text)
 
-    override fun onArmCustomMeta(id: String, metaState: Int, keyCode: Int) =
-        latinIME.onArmCustomMeta(id, metaState, keyCode)
-
     override fun onMouseInput(data: Bundle) = latinIME.sendMouseInput(data)
 
     override fun onContent(content: InputContentInfoCompat) {

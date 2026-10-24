@@ -47,6 +47,7 @@ import dev.drosh.ime.latin.common.Constants.Separators
 import dev.drosh.ime.latin.utils.Log
 import dev.drosh.ime.latin.utils.SpecialKeyEntry
 import dev.drosh.ime.latin.utils.SpecialKeysStore
+import dev.drosh.ime.latin.utils.withState
 import dev.drosh.ime.latin.utils.Theme
 import dev.drosh.ime.latin.utils.getActivity
 import dev.drosh.ime.latin.utils.prefs
@@ -144,14 +145,14 @@ fun SpecialKeysScreen(
                                             val delta = if (rowWidthPx > 0f) dx / rowWidthPx else 0f
                                             persist(entries.map {
                                                 if (it.id == entry.id)
-                                                    it.copy(width = it.width.plus(delta).coerceIn(SpecialKeysStore.MIN_WIDTH, SpecialKeysStore.MAX_WIDTH))
+                                                    it.withState(width = (it.width + delta).coerceIn(SpecialKeysStore.MIN_WIDTH, SpecialKeysStore.MAX_WIDTH))
                                                 else it
                                             })
                                         }
                                         dy > DRAG_REMOVE_THRESHOLD_DP * density -> {
                                             // dragged onto the pool card: remove
                                             persist(entries.map {
-                                                if (it.id == entry.id) it.copy(enabled = false) else it
+                                                if (it.id == entry.id) it.withState(enabled = false) else it
                                             })
                                             selected = null
                                             hintRes = R.string.special_keys_default_note
@@ -222,7 +223,7 @@ fun SpecialKeysScreen(
                                 onClick = {
                                     // tap adds to the end of the row
                                     persist(entries.map {
-                                        if (it.id == entry.id) it.copy(enabled = true) else it
+                                        if (it.id == entry.id) it.withState(enabled = true) else it
                                     })
                                 },
                                 onDrag = { dx ->
@@ -230,7 +231,7 @@ fun SpecialKeysScreen(
                                     val shift = (dx / (rowWidthPx / (active.size + 1).coerceAtLeast(1))).roundToInt()
                                     val target = shift.coerceIn(0, active.size)
                                     persist(entries.map {
-                                        if (it.id == entry.id) it.copy(enabled = true) else it
+                                        if (it.id == entry.id) it.withState(enabled = true) else it
                                     }.toMutableList().also { list ->
                                         val from = list.indexOfFirst { it.id == entry.id }
                                         if (from >= 0) list.add(target.coerceIn(0, list.size - 1), list.removeAt(from))

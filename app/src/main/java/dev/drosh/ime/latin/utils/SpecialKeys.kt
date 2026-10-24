@@ -114,9 +114,21 @@ sealed interface SpecialKeyEntry {
     ) : SpecialKeyEntry
 }
 
+/**
+ * Returns a copy of this entry with a new enabled flag and/or width. The
+ * sealed interface has no `copy()` of its own, so the editor uses this to
+ * mutate entries without knowing the concrete variant.
+ */
+fun SpecialKeyEntry.withState(
+    enabled: Boolean = this.enabled,
+    width: Float = this.width,
+): SpecialKeyEntry = when (this) {
+    is SpecialKeyEntry.BuiltIn -> copy(enabled = enabled, width = width)
+    is SpecialKeyEntry.CustomKey -> copy(enabled = enabled, width = width)
+}
+
 object SpecialKeysStore {
     const val PREF = "special_keys"
-
     /** Prefix of user-created combination keys in the stored value. */
     const val CUSTOM_PREFIX = "CUSTOM_"
 
