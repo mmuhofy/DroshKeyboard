@@ -1025,13 +1025,11 @@ public class LatinIME extends InputMethodService implements
             // Space state must be updated before calling updateShiftState
             switcher.updateShiftState(getCurrentAutoCapsState(), getCurrentRecapitalizeState());
         }
-        // Set neutral suggestions and show the toolbar if the "Auto show toolbar" setting is enabled.
+        // Set neutral suggestions. The quickbar mode belongs to the user; the
+        // auto-show-toolbar setting no longer switches modes on input start.
         if (!mHandler.hasPendingResumeSuggestions()) {
             mHandler.cancelUpdateSuggestionStrip();
             setNeutralSuggestionStrip();
-            if (hasSuggestionStripView() && currentSettingsValues.mAutoShowToolbar && !tryShowClipboardSuggestion()) {
-                mSuggestionStripView.setToolbarVisibility(true);
-            }
         }
 
         mainKeyboardView.setMainDictionaryAvailability(mDictionaryFacilitator.hasAtLeastOneInitializedMainDictionary());
@@ -1190,8 +1188,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void hideWindow() {
         Log.i(TAG, "hideWindow");
-        if (hasSuggestionStripView() && mSettings.getCurrent().mToolbarMode == ToolbarMode.EXPANDABLE)
-            mSuggestionStripView.setToolbarVisibility(false);
+        // keep the user's quickbar mode across window shows/hides
         mKeyboardSwitcher.onHideWindow();
 
         if (TRACE) Debug.stopMethodTracing();
@@ -1593,10 +1590,6 @@ public class LatinIME extends InputMethodService implements
                 || noSuggestionsFromDictionaries) {
             mSuggestionStripView.setSuggestions(suggestedWords,
                     mRichImm.getCurrentSubtype().isRtlSubtype());
-            // Auto hide the toolbar if dictionary suggestions are available
-            if (currentSettingsValues.mAutoHideToolbar && !noSuggestionsFromDictionaries) {
-                mSuggestionStripView.setToolbarVisibility(false);
-            }
         }
     }
 
@@ -1619,7 +1612,9 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void showSuggestionStrip() {
         if (hasSuggestionStripView()) {
-            mSuggestionStripView.setToolbarVisibility(false);
+            // "show the strip" means leave whatever quickbar mode is up and
+            // land in the suggestions mode
+            mSuggestionStripView.showSuggestionsMode();
         }
     }
 
@@ -1667,14 +1662,10 @@ public class LatinIME extends InputMethodService implements
                 ? currentSettings.mPunctuationSuggestions
                 : SuggestedWords.getEmptyInstance();
         setSuggestedWords(neutralSuggestions);
-        if (hasSuggestionStripView() && currentSettings.mAutoShowToolbar) {
-            final int codePointBeforeCursor = mInputLogic.mConnection.getCodePointBeforeCursor();
-            if (mInputLogic.mConnection.hasSelection()
-                    || codePointBeforeCursor == Constants.NOT_A_CODE
-                    || codePointBeforeCursor == Constants.CODE_ENTER) {
-                mSuggestionStripView.setToolbarVisibility(true);
-            }
-        }
+        // With the three quickbar modes the mode belongs to the user: typing
+        // only refreshes the words. The "auto show toolbar" setting would yank
+        // the user out of the special keys row on every line start, so it no
+        // longer switches modes here.
     }
 
     @Override
@@ -1897,6 +1888,12 @@ public class LatinIME extends InputMethodService implements
      */
     private int mArmedMetaState = 0;
 
+    // a user-created combination (e.g. Ctrl+K) armed from the special keys
+    // row: the next character press is sent as the whole combination
+    private String mArmedCustomId = null;
+    private int mArmedCustomMeta = 0;
+    private int mArmedCustomCode = 0;
+
     /**
      * Sends a mouse pad command to the editor as a private input command.
      *
@@ -1939,13 +1936,34 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onArmSpecialMeta(final int metaState) {
         mArmedMetaState = metaState;
+        // a plain modifier arm cancels a pending custom combination
+        mArmedCustomId = null;
+        mArmedCustomMeta = 0;
+        mArmedCustomCode = 0;
         if (mSuggestionStripView != null) {
             mSuggestionStripView.setArmedModifier(metaState);
         }
     }
 
+    /**
+     * Arms a user-created combination (e.g. Ctrl+K). The next character press
+     * is consumed and sent with the stored modifier bits.
+     */
+    public void onArmCustomMeta(final String id, final int metaState, final int keyCode) {
+        mArmedCustomId = id;
+        mArmedCustomMeta = metaState;
+        mArmedCustomCode = keyCode;
+        mArmedMetaState = 0;
+        if (mSuggestionStripView != null) {
+            mSuggestionStripView.setArmedModifier(0);
+        }
+    }
+
     /** Clears the armed sticky modifier and its visual state. */
     private void clearArmedModifier() {
+        mArmedCustomId = null;
+        mArmedCustomMeta = 0;
+        mArmedCustomCode = 0;
         if (mArmedMetaState == 0) return;
         mArmedMetaState = 0;
         if (mSuggestionStripView != null) {
@@ -1975,10 +1993,20 @@ public class LatinIME extends InputMethodService implements
      * When a sticky modifier is armed and {@code primaryCode} is a printable
      * code point, sends the corresponding control sequence to the editor the
      * same way Drosh's own extra key row does: Ctrl translates the character
-     * through the C0 table, Alt prefixes it with ESC. Returns true when the
-     * key was consumed.
+     * through the C0 table, Alt prefixes it with ESC. A custom combination
+     * (e.g. Ctrl+K) sends the stored key code with the stored modifier bits
+     * instead. Returns true when the key was consumed.
      */
     public boolean consumeArmedMeta(final int primaryCode) {
+        // custom combination: the stored code goes out with the stored bits,
+        // regardless of what the user pressed next
+        if (mArmedCustomId != null) {
+            final int meta = mArmedCustomMeta;
+            final int code = mArmedCustomCode;
+            clearArmedModifier();
+            mInputLogic.sendDownUpKeyEventWithMetaState(code, meta);
+            return true;
+        }
         if (mArmedMetaState == 0 || primaryCode <= 0) return false;
         final boolean ctrl = (mArmedMetaState & KeyEvent.META_CTRL_ON) != 0;
         final boolean alt = (mArmedMetaState & KeyEvent.META_ALT_ON) != 0;

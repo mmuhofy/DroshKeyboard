@@ -119,6 +119,7 @@
     <!-- Special keys row labels (also looked up by the reorder dialog, which
          uses the lowercase enum names) -->
     <string name="ctrl">Ctrl</string>
+    <string name="shift">Shift</string>
     <string name="alt">Alt</string>
     <string name="esc">Esc</string>
     <string name="tab">Tab</string>
@@ -142,6 +143,12 @@
     <string name="special_keys_scale_hint">Scale mode: drag sideways to widen or narrow the selected key.</string>
     <string name="special_keys_row_empty">Empty row — add a key from the card below</string>
     <string name="special_keys_pool_hint">Drag a key into the row to add it, or tap to append. Drag a row key down here to remove it.</string>
+    <string name="special_keys_pool_empty">All keys are in the row. Add a custom key above.</string>
+    <string name="special_keys_add_custom">Custom key</string>
+    <string name="special_keys_add_custom_summary">Create a key that sends a combination, e.g. Ctrl+K</string>
+    <string name="special_keys_custom_title">Custom key</string>
+    <string name="special_keys_custom_summary">Pick modifiers and a character. The chip sends the whole combination on the next tap.</string>
+    <string name="special_keys_custom_character">Character</string>
     <!-- Option name for switching language / subtype and input method -->
     <string name="language_switch_key_switch_both">Switch both</string>
     <!-- Option to show language switch key -->

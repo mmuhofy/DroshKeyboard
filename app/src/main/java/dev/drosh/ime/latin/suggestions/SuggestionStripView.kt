@@ -53,6 +53,8 @@ import dev.drosh.ime.latin.utils.ToolbarMode
 import dev.drosh.ime.latin.utils.addPinnedKey
 import dev.drosh.ime.latin.utils.createToolbarKey
 import dev.drosh.ime.latin.utils.SpecialKey
+import dev.drosh.ime.latin.utils.SpecialKeyEntry
+import dev.drosh.ime.latin.utils.SpecialKeysStore
 import dev.drosh.ime.latin.utils.dpToPx
 import dev.drosh.ime.latin.utils.getEnabledToolbarKeys
 import dev.drosh.ime.latin.utils.getPinnedToolbarKeys
@@ -104,6 +106,12 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
          * that follows it.
          */
         fun onArmSpecialMeta(metaState: Int)
+
+        /**
+         * Arms a user-created combination (e.g. Ctrl+K) stored in the special
+         * keys settings: the next key press is sent as the whole combination.
+         */
+        fun onArmCustomMeta(id: String, metaState: Int, keyCode: Int)
     }
 
     private val moreSuggestionsContainer: View
@@ -149,6 +157,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     // F1-F12 layer inside the special keys row
     private var fnLayerActive = false
     private var specialKeysSignature: String? = null
+    /** True when suggestions changed while another quickbar mode was up. */
+    private var pendingSuggestions = false
 
     // sticky modifier armed from the special keys row (KeyEvent meta mask)
     private var armedMetaState = 0
@@ -189,7 +199,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         enabledToolKeyBackground.gradientRadius = resources.getDimensionPixelSize(R.dimen.config_suggestions_strip_height) / 2.1f
 
         val mToolbarMode = if (isGone) ToolbarMode.HIDDEN else Settings.getValues().mToolbarMode
-        if (mToolbarMode == ToolbarMode.TOOLBAR_KEYS) {
+        if (mToolbarMode == ToolbarMode.HIDDEN) {
+            // toolbar mode hidden: the quickbar is always the special keys row
+            stripStage = STRIP_STAGE_SPECIAL
+        } else if (mToolbarMode == ToolbarMode.TOOLBAR_KEYS) {
+            // user prefers the app's quickbar by default
             setToolbarVisibility(true)
         }
 
@@ -267,10 +281,12 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     /**
-     * The quickbar has exactly two modes, toggled by the expand key:
-     * the special keys row, and the app's quickbar (mic, clipboard, mouse,
-     * snippets, ...). Callers that only care about showing or hiding the
-     * toolbar keep using this.
+     * The quickbar has three modes, cycled by the expand key:
+     * 1. the special keys row (Ctrl, Alt, Esc, ...),
+     * 2. the app's quickbar (mic, clipboard, mouse, snippets, ...),
+     * 3. the suggestion strip (word suggestions while typing).
+     * Callers that only care about showing or hiding the toolbar keep using
+     * this; a suggestions call lands in the suggestions mode automatically.
      */
     fun setToolbarVisibility(toolbarVisible: Boolean) {
         setStripStage(if (toolbarVisible) STRIP_STAGE_TOOLBAR else STRIP_STAGE_SPECIAL)
@@ -280,9 +296,9 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         stripStage = stage
         val toolbarVisible = stage == STRIP_STAGE_TOOLBAR
         val specialVisible = stage == STRIP_STAGE_SPECIAL
-        // two clean modes: the special row alone, or the app's quickbar
+        val suggestionsVisible = stage == STRIP_STAGE_SUGGESTIONS
         pinnedKeys.isVisible = toolbarVisible
-        suggestionsStrip.isVisible = false
+        suggestionsStrip.isVisible = suggestionsVisible
         toolbarContainer.isVisible = toolbarVisible
         functionalKeys.isVisible = specialVisible
 
@@ -296,22 +312,50 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         if (specialVisible) renderSpecialKeys()
     }
 
-    /** Toggles between the special keys row and the app's quickbar. */
+    /** Cycles: special keys -> app quickbar -> suggestions -> special keys. */
     private fun advanceStripStage() {
         setStripStage(
-            if (stripStage == STRIP_STAGE_TOOLBAR) STRIP_STAGE_SPECIAL else STRIP_STAGE_TOOLBAR
+            when (stripStage) {
+                STRIP_STAGE_SPECIAL -> STRIP_STAGE_TOOLBAR
+                STRIP_STAGE_TOOLBAR -> STRIP_STAGE_SUGGESTIONS
+                else -> STRIP_STAGE_SPECIAL
+            }
         )
     }
 
+    /**
+     * A suggestions update arrives while the user is in another mode: stay in
+     * that mode, but keep the words cached so switching to the suggestions
+     * mode shows them immediately.
+     */
     fun setSuggestions(suggestions: SuggestedWords, isRtlLanguage: Boolean) {
-        clear()
         setRtl(isRtlLanguage)
         suggestedWords = suggestions
+        pendingSuggestions = true
+        if (stripStage == STRIP_STAGE_SUGGESTIONS) {
+            layoutSuggestions()
+        }
+    }
+
+    /** Lays out the cached suggestions into the strip. */
+    private fun layoutSuggestions() {
+        pendingSuggestions = false
+        clear()
         startIndexOfMoreSuggestions = layoutHelper.layoutAndReturnStartIndexOfMoreSuggestions(
             context, suggestedWords, suggestionsStrip, this
         )
         isExternalSuggestionVisible = false
         updateKeys()
+    }
+
+    /**
+     * Shows the suggestions mode (used by LatinIME when the user typed and
+     * the strip should react), without stealing the mode if the user is
+     * deliberately elsewhere.
+     */
+    fun showSuggestionsMode() {
+        setStripStage(STRIP_STAGE_SUGGESTIONS)
+        layoutSuggestions()
     }
 
     fun setExternalSuggestionView(view: View?, addCloseButton: Boolean) {
@@ -337,7 +381,9 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             suggestionsStrip.addView(view)
         }
 
-        if (Settings.getValues().mAutoHideToolbar) setToolbarVisibility(false)
+        // A clipboard suggestion is an offer, not a mode change: it is laid
+        // out here and shown whenever the user cycles into the suggestions
+        // mode. Auto-hide would yank the user out of the special keys row.
     }
 
     fun setMoreSuggestionsHeight(remainingHeight: Int) {
@@ -535,7 +581,6 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             suggestedWords.mWillAutoCorrect, suggestedWords.mIsObsoleteSuggestions, suggestedWords.mInputStyle, suggestedWords.mSequenceNumber
         )
         setSuggestions(newSuggestedWords, direction != 1)
-        suggestionsStrip.isVisible = true
 
         // Show the toolbar if no suggestions are left and the "Auto show toolbar" setting is enabled
         if (this.suggestedWords.isEmpty && Settings.getValues().mAutoShowToolbar) {
@@ -546,7 +591,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private fun clear() {
         suggestionsStrip.removeAllViews()
         if (DEBUG_SUGGESTIONS) removeAllDebugInfoViews()
-        if (!toolbarContainer.isVisible)
+        if (stripStage == STRIP_STAGE_SUGGESTIONS)
             suggestionsStrip.isVisible = true
         dismissMoreSuggestionsPanel()
         for (word in wordViews) {
@@ -576,17 +621,17 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
      * resized and disabled freely.
      */
     private fun renderSpecialKeys() {
-        val entries = SpecialKey.parse(context.prefs()).filter { it.enabled }
-        val signature = entries.joinToString { "${it.key.name}:${it.width}" } + "|fn=$fnLayerActive"
+        val entries = SpecialKeysStore.parse(context.prefs()).filter { it.enabled }
+        val signature = entries.joinToString { "${it.id}:${it.width}" } + "|fn=$fnLayerActive"
         if (signature == specialKeysSignature) return
         specialKeysSignature = signature
         functionalKeys.removeAllViews()
         if (fnLayerActive) {
-            repeat(SpecialKey.FN_KEY_COUNT) { index ->
+            repeat(SpecialKeysStore.FN_KEY_COUNT) { index ->
                 functionalKeys.addView(makeSpecialChip("F${index + 1}", 1f) {
                     performKeyFeedback(it)
                     listener.onCodeInput(
-                        SpecialKey.fnKeyCode(index),
+                        SpecialKeysStore.fnKeyCode(index),
                         Constants.NOT_A_COORDINATE,
                         Constants.NOT_A_COORDINATE,
                         false,
@@ -607,52 +652,66 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private fun newChipBackground(): Drawable? =
         specialKeyChipBackground?.constantState?.newDrawable(resources)
 
-    private fun makeSpecialChip(entry: SpecialKey.Entry): View {
-        val key = entry.key
-        val iconName = key.iconName
-        if (iconName != null) {
-            val chip = ImageButton(context, null, R.attr.suggestionWordStyle)
-            chip.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT)
-                .apply { weight = entry.width }
-            val icon = KeyboardIconsSet.instance.getNewDrawable(iconName, context)
-            chip.setImageDrawable(icon)
-            chip.scaleType = ImageView.ScaleType.CENTER
-            chip.setPadding(6.dpToPx(resources), 4.dpToPx(resources), 6.dpToPx(resources), 4.dpToPx(resources))
-            chip.background = newChipBackground()
-            chip.isClickable = true
-            chip.setOnClickListener { view -> onSpecialChipClick(view, key) }
-            chip.tag = key
-            return chip
+    private fun makeSpecialChip(entry: SpecialKeyEntry): View = when (entry) {
+        is SpecialKeyEntry.BuiltIn -> {
+            val key = entry.key
+            val iconName = key.iconName
+            if (iconName != null) {
+                val chip = ImageButton(context, null, R.attr.suggestionWordStyle)
+                chip.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT)
+                    .apply { weight = entry.width }
+                val icon = KeyboardIconsSet.instance.getNewDrawable(iconName, context)
+                chip.setImageDrawable(icon)
+                chip.scaleType = ImageView.ScaleType.CENTER
+                chip.setPadding(6.dpToPx(resources), 4.dpToPx(resources), 6.dpToPx(resources), 4.dpToPx(resources))
+                chip.background = newChipBackground()
+                chip.isClickable = true
+                chip.setOnClickListener { view -> onSpecialChipClick(view, entry) }
+                chip.tag = entry
+                chip
+            } else {
+                val chip = makeSpecialChip(context.getString(key.labelResId), entry.width) { view ->
+                    onSpecialChipClick(view, entry)
+                }
+                chip.tag = entry
+                chip
+            }
         }
-        val chip = makeSpecialChip(context.getString(key.labelResId), entry.width) { view ->
-            onSpecialChipClick(view, key)
+        is SpecialKeyEntry.CustomKey -> {
+            val chip = makeSpecialChip(entry.label, entry.width) { view ->
+                performKeyFeedback(view)
+                // a custom combination is a one-shot: the next key press is
+                // consumed and sent as the whole combination
+                listener.onArmCustomMeta(entry.id, entry.metaState, entry.keyCode)
+            }
+            chip.tag = entry
+            chip
         }
-        chip.tag = key
-        return chip
     }
 
-    private fun onSpecialChipClick(view: View, key: SpecialKey) {
+    private fun onSpecialChipClick(view: View, entry: SpecialKeyEntry) {
+        val builtIn = entry as? SpecialKeyEntry.BuiltIn ?: return
         when {
-            key.isSticky -> armSticky(view, key)
-            key.isFn -> {
+            builtIn.key.isSticky -> armSticky(view, builtIn)
+            builtIn.key.isFn -> {
                 performKeyFeedback(view)
                 fnLayerActive = true
                 renderSpecialKeys()
             }
-            key.isArrow -> {
+            builtIn.key.isArrow -> {
                 performKeyFeedback(view)
                 disarmModifier()
                 listener.onCodeInput(
-                    key.code,
+                    builtIn.key.code,
                     Constants.NOT_A_COORDINATE,
                     Constants.NOT_A_COORDINATE,
                     false,
                 )
             }
-            key.emitText != null -> {
+            builtIn.key.emitText != null -> {
                 performKeyFeedback(view)
                 disarmModifier()
-                val text = key.emitText
+                val text = builtIn.key.emitText
                 if (text != null) listener.onSpecialTextInput(text)
             }
         }
@@ -674,9 +733,14 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         return chip
     }
 
-    private fun armSticky(view: View, key: SpecialKey) {
+    private fun armSticky(view: View, entry: SpecialKeyEntry.BuiltIn) {
         performKeyFeedback(view)
-        val metaState = if (key == SpecialKey.CTRL) KeyEvent.META_CTRL_ON else KeyEvent.META_ALT_ON
+        val metaState = when (entry.key) {
+            SpecialKey.CTRL -> KeyEvent.META_CTRL_ON
+            SpecialKey.SHIFT -> KeyEvent.META_SHIFT_ON
+            SpecialKey.ALT -> KeyEvent.META_ALT_ON
+            else -> return
+        }
         armedMetaState = if (armedMetaState == metaState) 0 else metaState
         refreshArmedKeyVisual()
         listener.onArmSpecialMeta(armedMetaState)
@@ -739,7 +803,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
         toolbarExpandKey.setOnClickListener(if (!toolbarIsExpandable) null else this)
         renderSpecialKeys()
-        pinnedKeys.visibility = suggestionsStrip.visibility
+        // mode decides what is visible; the stage setter owns the layout
+        setStripStage(stripStage)
         isExternalSuggestionVisible = false
     }
 
@@ -772,6 +837,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         private const val STRIP_STAGE_SPECIAL = 0
         /** Quickbar shows the app's toolbar (mic, clipboard, mouse, ...). */
         private const val STRIP_STAGE_TOOLBAR = 1
+        /** Quickbar shows the suggestion strip (word suggestions). */
+        private const val STRIP_STAGE_SUGGESTIONS = 2
 
         @JvmField
         var DEBUG_SUGGESTIONS = false
