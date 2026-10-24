@@ -329,12 +329,6 @@ private fun CustomKeyDialog(
     )
 }
 
-private inline fun buildInt(block: androidx.compose.runtime.MutableList<Int>.() -> Unit): Int {
-    val list = mutableListOf<Int>()
-    list.block()
-    return list.firstOrNull() ?: 0
-}
-
 @Composable
 private fun ModifierToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Text(
@@ -362,6 +356,7 @@ private fun SpecialKeyChipPreview(
     onDrag: (Float, Float) -> Unit,
 ) {
     val sticky = (entry as? SpecialKeyEntry.BuiltIn)?.key?.isSticky == true
+    val ctx = LocalContext.current
     Box(
         modifier = Modifier
             .background(
